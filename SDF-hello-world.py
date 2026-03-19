@@ -5,6 +5,8 @@ pipe = StableDiffusionXLPipeline.from_pretrained(
     "stabilityai/stable-diffusion-xl-base-1.0", 
     torch_dtype=torch.float16 
 )
+pipe = pipe.to("cuda") # or "mps" for Mac
+
 print("Pipeline loaded on GPU")
 
 # for the full list of parameters see https://huggingface.co/docs/diffusers/api/pipelines/stable_diffusion/stable_diffusion_xl#diffusers.StableDiffusionXLPipeline.__call__
