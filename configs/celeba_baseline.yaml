@@ -1,0 +1,30 @@
+seed: 42
+dataset:
+  name: celeba_hq_local
+  data_dir: data/celeba_hq_256
+  image_size: 128
+  batch_size: 8
+  num_workers: 2
+  train_size: 2700
+  test_size: 300
+
+model:
+  in_channels: 3
+  base_channels: 64
+  channel_mults: [1, 2, 4, 8]
+  time_emb_dim: 256
+
+diffusion:
+  timesteps: 500
+  beta_schedule: linear
+
+train:
+  epochs: 30
+  lr: 0.0002
+  grad_clip: 1.0
+  device: cuda
+  save_every: 1
+  output_name: celeba
+
+sample:
+  num_images: 300
