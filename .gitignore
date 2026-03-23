@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+checkpoints/
+logs/
+data/celeba_hq_256/
+data/butterfly/
+*.pt
+*.pth
+.env
+.venv/
+*.egg-info/
+dist/
+build/
+notebooks/.ipynb_checkpoints/
