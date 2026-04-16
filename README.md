@@ -142,6 +142,10 @@ from evaluation.visualize import plot_training_loss
 plot_training_loss("logs/training_log.json", save_path="loss_curve.png")
 ```
 
+## Unit Tests
+
+To run all unit tests, cd to the human-face-generation-df-model-main directory and enter the command pytest
+
 ## Hardware Requirements
 
 - **GPU recommended:** Training on CPU is extremely slow. Use CUDA (NVIDIA) or MPS (Apple Silicon).
