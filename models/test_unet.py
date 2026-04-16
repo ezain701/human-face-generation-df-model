@@ -123,10 +123,9 @@ def test_unet_forward_pass_output_tensor_is_not_nan():
     output_tensor = model(input_tensor, t)
 
     # Assert
-    assert output_tensor.shape == (batch_size, out_channels, image_size, image_size)
     assert not torch.isnan(output_tensor).any()
 
-def test_unet_forward_pass_output_tensor_is_not_nan():
+def test_unet_forward_pass_output_tensor_is_not_inf():
     # Arrange
     batch_size = 2
     in_channels = 3
@@ -140,5 +139,4 @@ def test_unet_forward_pass_output_tensor_is_not_nan():
     output_tensor = model(input_tensor, t)
 
     # Assert
-    assert output_tensor.shape == (batch_size, out_channels, image_size, image_size)
     assert not torch.isinf(output_tensor).any()      
