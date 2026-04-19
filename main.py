@@ -7,6 +7,7 @@ Usage:
 """
 
 import argparse
+import copy
 import torch
 
 from models.unet import UNet
@@ -29,6 +30,11 @@ def parse_args():
     parser.add_argument("--checkpoint_dir", type=str, default="checkpoints")
     parser.add_argument("--log_dir", type=str, default="logs")
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint to resume from")
+
+    # EMA options
+    parser.add_argument("--use_ema", action="store_true", help="Enable EMA model")
+    parser.add_argument("--ema_decay", type=float, default=0.999, help="EMA decay factor")
+
     return parser.parse_args()
 
 
@@ -41,8 +47,17 @@ def main():
     schedule = NoiseSchedule(num_timesteps=args.timesteps, device=device)
 
     # --- Model ---
-    model = UNet(base_channels=args.base_channels)
+    model = UNet(base_channels=args.base_channels).to(device)
     print(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
+
+    # --- EMA model ---
+    ema_model = None
+    if args.use_ema:
+        ema_model = copy.deepcopy(model).to(device)
+        ema_model.eval()
+        for p in ema_model.parameters():
+            p.requires_grad = False
+        print(f"EMA enabled (decay={args.ema_decay})")
 
     # --- Optimizer ---
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -52,8 +67,31 @@ def main():
     if args.resume:
         print(f"Resuming from checkpoint: {args.resume}")
         ckpt = torch.load(args.resume, map_location=device)
+
         model.load_state_dict(ckpt["model_state_dict"])
+        model = model.to(device)
+
         optimizer.load_state_dict(ckpt["optimizer_state_dict"])
+
+        # Move optimizer state tensors to the same device as the model
+        for state in optimizer.state.values():
+            for k, v in state.items():
+                if torch.is_tensor(v):
+                    state[k] = v.to(device)
+
+        # Force current CLI learning rate after resume
+        for group in optimizer.param_groups:
+            group["lr"] = args.lr
+
+        if args.use_ema and ema_model is not None:
+            if "ema_model_state_dict" in ckpt:
+                ema_model.load_state_dict(ckpt["ema_model_state_dict"])
+                ema_model = ema_model.to(device)
+                print("  Loaded EMA weights from checkpoint")
+            else:
+                ema_model.load_state_dict(model.state_dict())
+                print("  No EMA weights found in checkpoint; initialized EMA from model weights")
+
         start_epoch = ckpt.get("epoch", 0)
         print(f"  Resumed at epoch {start_epoch}")
 
@@ -69,6 +107,8 @@ def main():
     # --- Train ---
     trainer = Trainer(
         model=model,
+        ema_model=ema_model,
+        ema_decay=args.ema_decay,
         schedule=schedule,
         dataloader=dataloader,
         optimizer=optimizer,

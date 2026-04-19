@@ -19,6 +19,8 @@ class Trainer:
         schedule,
         dataloader,
         optimizer,
+        ema_model=None,
+        ema_decay=0.999,
         device="cpu",
         checkpoint_dir="checkpoints",
         log_dir="logs",
@@ -27,6 +29,8 @@ class Trainer:
         self.schedule = schedule
         self.dataloader = dataloader
         self.optimizer = optimizer
+        self.ema_model = ema_model.to(device) if ema_model is not None else None
+        self.ema_decay = ema_decay
         self.device = device
         self.checkpoint_dir = checkpoint_dir
         self.log_dir = log_dir
@@ -35,6 +39,23 @@ class Trainer:
         os.makedirs(log_dir, exist_ok=True)
 
         self.training_log = []
+
+    @torch.no_grad()
+    def _update_ema(self):
+        if self.ema_model is None:
+            return
+
+        ema_params = dict(self.ema_model.named_parameters())
+        model_params = dict(self.model.named_parameters())
+
+        for name, param in model_params.items():
+            ema_params[name].mul_(self.ema_decay).add_(param.data, alpha=1.0 - self.ema_decay)
+
+        ema_buffers = dict(self.ema_model.named_buffers())
+        model_buffers = dict(self.model.named_buffers())
+
+        for name, buf in model_buffers.items():
+            ema_buffers[name].copy_(buf)
 
     def train(self, num_epochs, sample_every=10, image_size=256, start_epoch=0):
         """
@@ -65,6 +86,7 @@ class Trainer:
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
                 self.optimizer.step()
+                self._update_ema()
 
                 epoch_loss += loss.item()
                 num_batches += 1
@@ -81,8 +103,9 @@ class Trainer:
         self._save_log()
 
     def _save_samples(self, epoch, image_size, num_samples=4):
-        self.model.eval()
-        samples = generate_samples(self.schedule, self.model, num_samples, image_size)
+        sample_model = self.ema_model if self.ema_model is not None else self.model
+        sample_model.eval()
+        samples = generate_samples(self.schedule, sample_model, num_samples, image_size)
         self.model.train()
         path = os.path.join(self.log_dir, f"samples_epoch_{epoch}.png")
         save_image(samples, path, nrow=2)
@@ -90,11 +113,16 @@ class Trainer:
 
     def _save_checkpoint(self, epoch):
         path = os.path.join(self.checkpoint_dir, f"model_epoch_{epoch}.pt")
-        torch.save({
+        checkpoint = {
             "epoch": epoch,
             "model_state_dict": self.model.state_dict(),
             "optimizer_state_dict": self.optimizer.state_dict(),
-        }, path)
+        }
+
+        if self.ema_model is not None:
+            checkpoint["ema_model_state_dict"] = self.ema_model.state_dict()
+
+        torch.save(checkpoint, path)
         print(f"  Saved checkpoint to {path}")
 
     def _save_log(self):
