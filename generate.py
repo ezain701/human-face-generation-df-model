@@ -3,7 +3,7 @@ Generate images from a trained checkpoint and optionally compute FID.
 
 Usage:
     python generate.py --checkpoint checkpoints/model_epoch_100.pt --num_images 300
-    python generate.py --checkpoint checkpoints/model_epoch_100.pt --num_images 300 --compute_fid --data_dir data/celeba_hq_256
+    python generate.py --checkpoint checkpoints/model_epoch_100.pt --num_images 300 --compute_fid --compute_kid --data_dir data/celeba_hq_256
 """
 
 import argparse
@@ -15,7 +15,9 @@ from models.unet import UNet
 from models.noise_schedule import NoiseSchedule
 from models.reverse_diffusion import sample as generate_samples
 from evaluation.fid import compute_fid_score
+from evaluation.kid import compute_kid
 
+_PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate images and evaluate FID")
@@ -23,13 +25,13 @@ def parse_args():
     parser.add_argument("--num_images", type=int, default=300)
     parser.add_argument("--image_size", type=int, default=256)
     parser.add_argument("--timesteps", type=int, default=1000)
-    parser.add_argument("--base_channels", type=int, default=128)
-    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for generation")
+    parser.add_argument("--base_channels", type=int, default=64)
+    parser.add_argument("--batch_size", type=int, default=4, help="Batch size for generation")
     parser.add_argument("--output_dir", type=str, default="generated")
     parser.add_argument("--compute_fid", action="store_true", help="Compute FID against real images")
-    parser.add_argument("--data_dir", type=str, default="data/celeba_hq_256", help="Real images dir (for FID)")
+    parser.add_argument("--compute_kid", action="store_true", help="Compute KID against real images")
+    parser.add_argument("--data_dir", type=str, default=os.path.join(_PROJECT_ROOT, "data", "celeba_hq_256"), help="Real images dir (for FID)")
     return parser.parse_args()
-
 
 def main():
     args = parse_args()
@@ -70,18 +72,21 @@ def main():
     print(f"Saved {len(all_images)} images to {args.output_dir}/")
     print(f"Saved grid preview to {grid_path}")
 
-    # --- Compute FID ---
-    if args.compute_fid:
+    if args.compute_fid or args.compute_kid:
         from data.dataset import CelebAHQDataset
-
-        print("Computing FID score...")
         test_dataset = CelebAHQDataset(args.data_dir, image_size=args.image_size, split="test")
         real_images = torch.stack([test_dataset[i] for i in range(len(test_dataset))])
         real_images = (real_images + 1) / 2  # rescale from [-1,1] to [0,1]
 
+    if args.compute_fid:
+        print("Computing FID score...")
         fid = compute_fid_score(real_images, all_images, device=device)
         print(f"FID Score: {fid:.2f}")
 
+    if args.compute_kid:
+        print("Computing KID score...")
+        kid_mean, kid_std = compute_kid(real_images, all_images, device=device)
+        print(f"KID Score: {kid_mean:.4f} ± {kid_std:.4f}")
 
 if __name__ == "__main__":
     main()
