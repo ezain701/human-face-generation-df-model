@@ -1,0 +1,11 @@
+run_name=expK_faces_img128_bs1_ch96_ep20_lr1e4
+dataset=celeba_hq_256
+epochs=20
+batch_size=1
+image_size=128
+base_channels=96
+lr=0.0001
+sample_every=2
+train_split=2700
+test_split=300
+resume=no

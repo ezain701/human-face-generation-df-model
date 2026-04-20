@@ -1,0 +1,10 @@
+run_name=expG_faces_img128_bs1_ch96_ep20
+dataset=celeba_hq_256
+epochs=20
+batch_size=1
+image_size=128
+base_channels=96
+sample_every=2
+train_split=2700
+test_split=300
+resume=no

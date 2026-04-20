@@ -1,0 +1,12 @@
+run_name=expEMAcheck_raw_img128_bs1_ch64_ep10
+dataset=celeba_hq_256
+epochs=10
+batch_size=1
+image_size=128
+base_channels=64
+lr=0.0002
+sample_every=5
+train_split=2700
+test_split=300
+resume=no
+use_ema=no

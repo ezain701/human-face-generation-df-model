@@ -1,0 +1,13 @@
+run_name=expF200_ema_faces_img128_bs1_ch64_ep200
+dataset=celeba_hq_256
+epochs=200
+batch_size=1
+image_size=128
+base_channels=64
+lr=0.0002
+sample_every=10
+train_split=2700
+test_split=300
+resume=no
+use_ema=yes
+ema_decay=0.999

@@ -1,0 +1,187 @@
+Using device: cuda
+Model parameters: 8,952,067
+Resuming from checkpoint: experiments/expJ100_faces_img128_bs1_ch64_ep100_lr1e4/checkpoints/model_epoch_100.pt
+  Resumed at epoch 100
+Dataset: celeba — 2700 images, 2700 batches/epoch
+Epoch 101 — Average Loss: 0.011335
+Epoch 102 — Average Loss: 0.012021
+Epoch 103 — Average Loss: 0.010911
+Epoch 104 — Average Loss: 0.010953
+Epoch 105 — Average Loss: 0.011402
+Epoch 106 — Average Loss: 0.011143
+Epoch 107 — Average Loss: 0.011478
+Epoch 108 — Average Loss: 0.011156
+Epoch 109 — Average Loss: 0.011894
+Epoch 110 — Average Loss: 0.010912
+  Saved samples to logs/samples_epoch_110.png
+  Saved checkpoint to checkpoints/model_epoch_110.pt
+Epoch 111 — Average Loss: 0.011553
+Epoch 112 — Average Loss: 0.011067
+Epoch 113 — Average Loss: 0.011808
+Epoch 114 — Average Loss: 0.011796
+Epoch 115 — Average Loss: 0.011342
+Epoch 116 — Average Loss: 0.012009
+Epoch 117 — Average Loss: 0.011068
+Epoch 118 — Average Loss: 0.012114
+Epoch 119 — Average Loss: 0.011886
+Epoch 120 — Average Loss: 0.011995
+  Saved samples to logs/samples_epoch_120.png
+  Saved checkpoint to checkpoints/model_epoch_120.pt
+Epoch 121 — Average Loss: 0.012156
+Epoch 122 — Average Loss: 0.011650
+Epoch 123 — Average Loss: 0.011235
+Epoch 124 — Average Loss: 0.011332
+Epoch 125 — Average Loss: 0.012193
+Epoch 126 — Average Loss: 0.011949
+Epoch 127 — Average Loss: 0.011295
+Epoch 128 — Average Loss: 0.010381
+Epoch 129 — Average Loss: 0.011302
+Epoch 130 — Average Loss: 0.011993
+  Saved samples to logs/samples_epoch_130.png
+  Saved checkpoint to checkpoints/model_epoch_130.pt
+Epoch 131 — Average Loss: 0.011106
+Epoch 132 — Average Loss: 0.010957
+Epoch 133 — Average Loss: 0.011915
+Epoch 134 — Average Loss: 0.010893
+Epoch 135 — Average Loss: 0.012007
+Epoch 136 — Average Loss: 0.011137
+Epoch 137 — Average Loss: 0.010839
+Epoch 138 — Average Loss: 0.011100
+Epoch 139 — Average Loss: 0.010574
+Epoch 140 — Average Loss: 0.011439
+  Saved samples to logs/samples_epoch_140.png
+  Saved checkpoint to checkpoints/model_epoch_140.pt
+Epoch 141 — Average Loss: 0.011858
+Epoch 142 — Average Loss: 0.011822
+Epoch 143 — Average Loss: 0.011422
+Epoch 144 — Average Loss: 0.011469
+Epoch 145 — Average Loss: 0.010764
+Epoch 146 — Average Loss: 0.010774
+Epoch 147 — Average Loss: 0.010759
+Epoch 148 — Average Loss: 0.011152
+Epoch 149 — Average Loss: 0.011474
+Epoch 150 — Average Loss: 0.011309
+  Saved samples to logs/samples_epoch_150.png
+  Saved checkpoint to checkpoints/model_epoch_150.pt
+Epoch 151 — Average Loss: 0.011975
+Epoch 152 — Average Loss: 0.010414
+Epoch 153 — Average Loss: 0.011769
+Epoch 154 — Average Loss: 0.011804
+Epoch 155 — Average Loss: 0.011984
+Epoch 156 — Average Loss: 0.011241
+Epoch 157 — Average Loss: 0.010833
+Epoch 158 — Average Loss: 0.010536
+Epoch 159 — Average Loss: 0.010089
+Epoch 160 — Average Loss: 0.011454
+  Saved samples to logs/samples_epoch_160.png
+  Saved checkpoint to checkpoints/model_epoch_160.pt
+Epoch 161 — Average Loss: 0.011618
+Epoch 162 — Average Loss: 0.011049
+Epoch 163 — Average Loss: 0.011167
+Epoch 164 — Average Loss: 0.010582
+Epoch 165 — Average Loss: 0.011548
+Epoch 166 — Average Loss: 0.011286
+Epoch 167 — Average Loss: 0.010848
+Epoch 168 — Average Loss: 0.010855
+Epoch 169 — Average Loss: 0.011147
+Epoch 170 — Average Loss: 0.010871
+  Saved samples to logs/samples_epoch_170.png
+  Saved checkpoint to checkpoints/model_epoch_170.pt
+Epoch 171 — Average Loss: 0.011547
+Epoch 172 — Average Loss: 0.010719
+Epoch 173 — Average Loss: 0.012299
+Epoch 174 — Average Loss: 0.011290
+Epoch 175 — Average Loss: 0.010933
+Epoch 176 — Average Loss: 0.010628
+Epoch 177 — Average Loss: 0.010917
+Epoch 178 — Average Loss: 0.011593
+Epoch 179 — Average Loss: 0.010404
+Epoch 180 — Average Loss: 0.011193
+  Saved samples to logs/samples_epoch_180.png
+  Saved checkpoint to checkpoints/model_epoch_180.pt
+Epoch 181 — Average Loss: 0.011301
+Epoch 182 — Average Loss: 0.011046
+Epoch 183 — Average Loss: 0.011352
+Epoch 184 — Average Loss: 0.010962
+Epoch 185 — Average Loss: 0.010243
+Epoch 186 — Average Loss: 0.010841
+Epoch 187 — Average Loss: 0.010839
+Epoch 188 — Average Loss: 0.011998
+Epoch 189 — Average Loss: 0.010760
+Epoch 190 — Average Loss: 0.010529
+  Saved samples to logs/samples_epoch_190.png
+  Saved checkpoint to checkpoints/model_epoch_190.pt
+Epoch 191 — Average Loss: 0.011028
+Epoch 192 — Average Loss: 0.010790
+Epoch 193 — Average Loss: 0.011969
+Epoch 194 — Average Loss: 0.010320
+Epoch 195 — Average Loss: 0.011093
+Epoch 196 — Average Loss: 0.010733
+Epoch 197 — Average Loss: 0.010797
+Epoch 198 — Average Loss: 0.011601
+Epoch 199 — Average Loss: 0.010850
+Epoch 200 — Average Loss: 0.011128
+  Saved samples to logs/samples_epoch_200.png
+  Saved checkpoint to checkpoints/model_epoch_200.pt
+Epoch 201 — Average Loss: 0.010970
+Epoch 202 — Average Loss: 0.010348
+Epoch 203 — Average Loss: 0.010975
+Epoch 204 — Average Loss: 0.010999
+Epoch 205 — Average Loss: 0.011248
+Epoch 206 — Average Loss: 0.010388
+Epoch 207 — Average Loss: 0.009908
+Epoch 208 — Average Loss: 0.011343
+Epoch 209 — Average Loss: 0.011450
+Epoch 210 — Average Loss: 0.010853
+  Saved samples to logs/samples_epoch_210.png
+  Saved checkpoint to checkpoints/model_epoch_210.pt
+Epoch 211 — Average Loss: 0.010135
+Epoch 212 — Average Loss: 0.010942
+Epoch 213 — Average Loss: 0.010712
+Epoch 214 — Average Loss: 0.009977
+Epoch 215 — Average Loss: 0.011144
+Epoch 216 — Average Loss: 0.011755
+Epoch 217 — Average Loss: 0.011552
+Epoch 218 — Average Loss: 0.010749
+Epoch 219 — Average Loss: 0.009703
+Epoch 220 — Average Loss: 0.010917
+  Saved samples to logs/samples_epoch_220.png
+  Saved checkpoint to checkpoints/model_epoch_220.pt
+Epoch 221 — Average Loss: 0.011612
+Epoch 222 — Average Loss: 0.010581
+Epoch 223 — Average Loss: 0.010835
+Epoch 224 — Average Loss: 0.010102
+Epoch 225 — Average Loss: 0.011584
+Epoch 226 — Average Loss: 0.010729
+Epoch 227 — Average Loss: 0.011269
+Epoch 228 — Average Loss: 0.011168
+Epoch 229 — Average Loss: 0.011912
+Epoch 230 — Average Loss: 0.011814
+  Saved samples to logs/samples_epoch_230.png
+  Saved checkpoint to checkpoints/model_epoch_230.pt
+Epoch 231 — Average Loss: 0.010871
+Epoch 232 — Average Loss: 0.011292
+Epoch 233 — Average Loss: 0.012271
+Epoch 234 — Average Loss: 0.011345
+Epoch 235 — Average Loss: 0.011409
+Epoch 236 — Average Loss: 0.010713
+Epoch 237 — Average Loss: 0.010963
+Epoch 238 — Average Loss: 0.010399
+Epoch 239 — Average Loss: 0.011260
+Epoch 240 — Average Loss: 0.012063
+  Saved samples to logs/samples_epoch_240.png
+  Saved checkpoint to checkpoints/model_epoch_240.pt
+Epoch 241 — Average Loss: 0.011615
+Epoch 242 — Average Loss: 0.010298
+Epoch 243 — Average Loss: 0.011061
+Epoch 244 — Average Loss: 0.010425
+Epoch 245 — Average Loss: 0.010536
+Epoch 246 — Average Loss: 0.010987
+Epoch 247 — Average Loss: 0.011324
+Epoch 248 — Average Loss: 0.011663
+Epoch 249 — Average Loss: 0.010089
+Epoch 250 — Average Loss: 0.010887
+  Saved samples to logs/samples_epoch_250.png
+  Saved checkpoint to checkpoints/model_epoch_250.pt
+Saved training log to logs/training_log.json
+Training complete.
