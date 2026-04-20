@@ -21,6 +21,7 @@ class Trainer:
         optimizer,
         ema_model=None,
         ema_decay=0.999,
+        clip_grad=None,
         device="cpu",
         checkpoint_dir="checkpoints",
         log_dir="logs",
@@ -34,6 +35,7 @@ class Trainer:
         self.device = device
         self.checkpoint_dir = checkpoint_dir
         self.log_dir = log_dir
+        self.clip_grad = clip_grad
 
         os.makedirs(checkpoint_dir, exist_ok=True)
         os.makedirs(log_dir, exist_ok=True)
@@ -84,7 +86,10 @@ class Trainer:
 
                 self.optimizer.zero_grad()
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+
+                if self.clip_grad is not None:
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_grad)
+
                 self.optimizer.step()
                 self._update_ema()
 
