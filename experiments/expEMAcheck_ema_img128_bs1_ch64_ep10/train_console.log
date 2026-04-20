@@ -1,0 +1,20 @@
+Using device: cuda
+Model parameters: 8,952,067
+EMA enabled (decay=0.999)
+Dataset: celeba — 2700 images, 2700 batches/epoch
+Epoch 1 — Average Loss: 0.035818
+Epoch 2 — Average Loss: 0.020074
+Epoch 3 — Average Loss: 0.017848
+Epoch 4 — Average Loss: 0.016743
+Epoch 5 — Average Loss: 0.015587
+  Saved samples to logs/samples_epoch_5.png
+  Saved checkpoint to checkpoints/model_epoch_5.pt
+Epoch 6 — Average Loss: 0.016037
+Epoch 7 — Average Loss: 0.015635
+Epoch 8 — Average Loss: 0.013467
+Epoch 9 — Average Loss: 0.013853
+Epoch 10 — Average Loss: 0.014178
+  Saved samples to logs/samples_epoch_10.png
+  Saved checkpoint to checkpoints/model_epoch_10.pt
+Saved training log to logs/training_log.json
+Training complete.
