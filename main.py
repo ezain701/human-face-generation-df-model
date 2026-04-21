@@ -30,6 +30,12 @@ def parse_args():
     parser.add_argument("--checkpoint_dir", type=str, default="checkpoints")
     parser.add_argument("--log_dir", type=str, default="logs")
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint to resume from")
+    parser.add_argument(
+        "--clip_grad",
+        type=float,
+        default=1.0,
+        help="Max gradient norm. Set <= 0 to disable gradient clipping.",
+    )
 
     # EMA options
     parser.add_argument("--use_ema", action="store_true", help="Enable EMA model")
@@ -112,6 +118,7 @@ def main():
         schedule=schedule,
         dataloader=dataloader,
         optimizer=optimizer,
+        clip_grad=args.clip_grad if args.clip_grad > 0 else None,
         device=device,
         checkpoint_dir=args.checkpoint_dir,
         log_dir=args.log_dir,
