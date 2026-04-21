@@ -36,6 +36,10 @@ def parse_args():
         default=1.0,
         help="Max gradient norm. Set <= 0 to disable gradient clipping.",
     )
+    parser.add_argument("--use_scheduler", action="store_true", help="Enable cosine annealing scheduler")
+    parser.add_argument("--scheduler_tmax", type=int, default=None, help="T_max for CosineAnnealingLR (defaults to total epochs)")
+    parser.add_argument("--scheduler_eta_min", type=float, default=1e-6, help="Minimum learning rate for CosineAnnealingLR")
+
 
     # EMA options
     parser.add_argument("--use_ema", action="store_true", help="Enable EMA model")
@@ -67,6 +71,17 @@ def main():
 
     # --- Optimizer ---
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    scheduler = None
+    if args.use_scheduler:
+        t_max = args.scheduler_tmax if args.scheduler_tmax is not None else args.epochs
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=t_max,
+            eta_min=args.scheduler_eta_min,
+        )
+        print(
+            f"Scheduler enabled: CosineAnnealingLR(T_max={t_max}, eta_min={args.scheduler_eta_min})"
+        )
 
     # --- Resume from checkpoint ---
     start_epoch = 0
@@ -75,6 +90,9 @@ def main():
         ckpt = torch.load(args.resume, map_location=device)
 
         model.load_state_dict(ckpt["model_state_dict"])
+        if scheduler is not None and "scheduler_state_dict" in ckpt:
+            scheduler.load_state_dict(ckpt["scheduler_state_dict"])
+            print("  Loaded scheduler state from checkpoint")
         model = model.to(device)
 
         optimizer.load_state_dict(ckpt["optimizer_state_dict"])
@@ -88,6 +106,14 @@ def main():
         # Force current CLI learning rate after resume
         for group in optimizer.param_groups:
             group["lr"] = args.lr
+
+        if scheduler is not None and "scheduler_state_dict" not in ckpt:
+            t_max = args.scheduler_tmax if args.scheduler_tmax is not None else args.epochs
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer,
+                T_max=t_max,
+                eta_min=args.scheduler_eta_min,
+            )
 
         if args.use_ema and ema_model is not None:
             if "ema_model_state_dict" in ckpt:
@@ -122,6 +148,7 @@ def main():
         device=device,
         checkpoint_dir=args.checkpoint_dir,
         log_dir=args.log_dir,
+        scheduler=scheduler,
     )
     trainer.train(
         num_epochs=args.epochs,

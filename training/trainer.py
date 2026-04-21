@@ -25,6 +25,7 @@ class Trainer:
         device="cpu",
         checkpoint_dir="checkpoints",
         log_dir="logs",
+        scheduler=None,
     ):
         self.model = model.to(device)
         self.schedule = schedule
@@ -36,6 +37,7 @@ class Trainer:
         self.checkpoint_dir = checkpoint_dir
         self.log_dir = log_dir
         self.clip_grad = clip_grad
+        self.scheduler=scheduler
 
         os.makedirs(checkpoint_dir, exist_ok=True)
         os.makedirs(log_dir, exist_ok=True)
@@ -98,12 +100,16 @@ class Trainer:
                 progress.set_postfix(loss=loss.item())
 
             avg_loss = epoch_loss / num_batches
-            self.training_log.append({"epoch": epoch, "avg_loss": avg_loss})
-            print(f"Epoch {epoch} — Average Loss: {avg_loss:.6f}")
+            
+            current_lr = self.optimizer.param_groups[0]["lr"]
+            self.training_log.append({"epoch": epoch, "avg_loss": avg_loss, "lr": current_lr})
+            print(f"Epoch {epoch} — Average Loss: {avg_loss:.6f} — LR: {current_lr:.8f}")
+
 
             if epoch % sample_every == 0:
                 self._save_samples(epoch, image_size)
                 self._save_checkpoint(epoch)
+
 
         self._save_log()
 
@@ -126,6 +132,7 @@ class Trainer:
 
         if self.ema_model is not None:
             checkpoint["ema_model_state_dict"] = self.ema_model.state_dict()
+
 
         torch.save(checkpoint, path)
         print(f"  Saved checkpoint to {path}")
