@@ -12,9 +12,6 @@
 \begin{document}
 
 \title{Human Faces Generation with Diffusion Models\\
-{\footnotesize \textsuperscript{*}Note: Sub-titles are not captured in Xplore and
-should not be used}
-\thanks{Equal Contribution}
 }
 
 \author{
@@ -56,26 +53,26 @@ The core principle is iteratively denoising from noise to structured output.
 Diffusion models have achieved strong results across multiple domains including image synthesis, video generation, audio synthesis, and molecular design
 
 \section{Literature Review}
-Generative modelling problem (why do we want to generate images). 
+Generative modeling aims to learn a probability distribution over high-dimensional data such that new samples can be drawn from it. Image synthesis has long served as a proving ground for generative methods, and for much of the last decade the dominant approach was Generative Adversarial Networks (GANs) \cite{b6}. GANs frame image generation as a two-player game between a generator that produces candidate samples from random noise and a discriminator that distinguishes them from real data.
 
-GANs and their limitations.
+Despite producing visually impressive results, GANs are notoriously difficult to train: the adversarial objective is prone to instability, mode collapse reduces the diversity of generated samples, and convergence is sensitive to architectural and hyperparameter choices. These limitations motivated the search for generative models with more stable training dynamics and stronger likelihood-based foundations.
 
-Introduce diffusion models as the response to those limitations
+Diffusion models provide such an alternative. The core idea, first proposed by Sohl-Dickstein et al. [4] and drawn from nonequilibrium thermodynamics, is to define a forward process that gradually corrupts data by adding Gaussian noise over many timesteps, and then to learn a reverse process that removes noise step by step, recovering samples from the data distribution.
 
-Narrow to face generation specifically, then evaluation methods (FID). 
+Ho et al. [3] made this framework practical with Denoising Diffusion Probabilistic Models (DDPMs), and this formulation of DDPM forms the basis of the model implemented in this project. Song et al. [2] unified discrete-time denoising diffusion with continuous-time score-based generative modeling under a single stochastic differential equation framework, showing that both approaches can be viewed as learning the score function of a data distribution perturbed by noise at varying scales. 
 
-Each section cites the relevant papers and each section motivates the next, leading the reader to the conclusion that your project approach makes sense.
-Dhariwal & Nichol 2021
-https://doi.org/10.48550/arXiv.2105.05233
-Song et al. 2020
+Shortly afterwards, Dhariwal and Nichol [1] demonstrated empirically that diffusion models outperform GANs on standard image synthesis benchmarks across multiple resolutions, through a combination of architectural improvements, a learned reverse-process variance, and classifier-based guidance for conditional generation.
 
+Subsequent work has identified several refinements to the original DDPM formulation that improve sample quality at modest implementation cost. Nichol and Dhariwal [8] introduced a cosine noise schedule in which the cumulative signal-preservation factor decays as a shifted squared cosine. The cosine schedule destroys image information more gradually across timesteps, avoiding the rapid saturation observed at late timesteps under linear scheduling, and yields improved FID at equivalent training cost. 
+
+Dhariwal and Nichol [1] further showed that adaptive group normalization — in which the affine parameters of group normalization are predicted from the timestep embedding rather than learned as constants — provides a stronger form of timestep conditioning than the additive injection used in the original DDPM. The use of exponential moving averages of model parameters during sampling, while not introduced by any single paper, has become standard practice across the diffusion literature for stabilizing sample quality. 
+
+Progress in generative image modeling depends on standardized benchmarks and quantitative evaluation. For unconditional face generation, the CelebA-HQ dataset introduced by Karras et al. [7] has become a widely adopted benchmark, providing 30,000 high-quality face images and supporting evaluation across GANs, score-based approaches, and diffusion models. 
+
+To assess sample quality, the Fréchet Inception Distance (FID) proposed by Heusel et al. [5] has emerged as the standard metric. FID embeds both real and generated images into the feature space of a pretrained Inception-v3 network, fits a multivariate Gaussian to each set of features, and computes the Fréchet distance between the two Gaussians. 
 
 \section{Methodology}
 The diffusion model architecture.
-
-
-
-.
 
 Hyperparameters.
 
@@ -108,8 +105,22 @@ abbreviations in the title or heads unless they are unavoidable.
 
 
 \subsection{FID scores}
+If we don't already have the FID scores recorded, we will need to generate at least 300 images.
+
+\subsection{KID scores}
+To get a reliable KID score, we do not need to rerun the training but we need to generate at least 300 images based on the latest checkpoint file.
 
 \subsection{Hyperparameter comparisons}
+
+Number of timesteps T: more steps generally mean better samples but slower sampling. 
+
+Noise schedule: linear vs cosine.
+
+Learning rate and batch size.
+
+Model capacity (U-Net depth and width): more capacity helps up to a point, then overfits or becomes impractical.
+
+EMA (exponential moving average) of weights.
 
 \subsection{Generated image examples}
 
@@ -287,11 +298,14 @@ element symbols.
 
 
 \bibitem{b1} P. Dhariwal and A. Nichol, ``Diffusion models beat GANs on image synthesis,'' in Advances in Neural Information Processing Systems, vol. 34, pp. 8780–8794, 2021.
-\bibitem{b2} Y. Song, J. Sohl-Dickstein, D. P. Kingma, A. Kumar, S. Ermon, and B. Poole, "Score-based generative modeling through stochastic differential equations," in Proc. Int. Conf. Learn. Represent. (ICLR), 2021.
+\bibitem{b2} Y. Song, J. Sohl-Dickstein, D. P. Kingma, A. Kumar, S. Ermon, and B. Poole, "Score-based generative modeling through stochastic differential equations," in Proceedings of the International Conference on Learning Representations (ICLR), 2021.
 \bibitem{b3} Ho, J., Jain, A., \& Abbeel, P. (2020). Denoising Diffusion Probabilistic Models. NeurIPS 2020.
 \bibitem{b4} J. Sohl-Dickstein, W. Eric, M. Niru, and G. Surya, "Deep Unsupervised Learning using Nonequilibrium Thermodynamics," in Proc. Int. Conf. Learn. Represent. (ICLR), 2015.
 \bibitem{b5} M. Heusel, H. Ramsauer, T. Unterthiner, B. Nessler, and S. Hochreiter, "GANs trained by a two time-scale update rule converge to a local Nash equilibrium," in Advances in Neural Information Processing Systems, vol. 30, pp. 6626–6637, 2017.
 \bibitem{b6} I. J. Goodfellow, J. Pouget-Abadie, M. Mirza, B. Xu, D. Warde-Farley, S. Ozair, A. Courville, and Y. Bengio, "Generative adversarial nets," in Advances in Neural Information Processing Systems, vol. 27, pp. 2672–2680, 2014.
+\bibitem{b7} T. Karras, T. Aila, S. Laine, and J. Lehtinen, "Progressive Growing of GANs for Improved Quality, Stability, and Variation," in Proc. Int. Conf. Learn. Represent. (ICLR), 2018.
+[8] A. Q. Nichol and P. Dhariwal, "Improved Denoising Diffusion Probabilistic Models," in Proc. Int. Conf. Mach. Learn. (ICML), pp. 8162–8171, 2021.
+\bibitem{b8} A. Nichol and P. Dhariwal, "Improved Denoising Diffusion Probabilistic Models," in Proceedings of the International Conference on Machine Learning (ICML), pp. 8162–8171, 2021.
 \end{thebibliography}
 \vspace{12pt}
 \color{red}
