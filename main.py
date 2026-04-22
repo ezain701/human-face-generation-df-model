@@ -36,6 +36,19 @@ def parse_args():
         default=1.0,
         help="Max gradient norm. Set <= 0 to disable gradient clipping.",
     )
+    parser.add_argument(
+        "--schedule_type",
+        type=str,
+        default="linear",
+        choices=["linear", "cosine"],
+        help="Noise schedule type for diffusion process",
+    )
+    parser.add_argument(
+        "--cosine_s",
+        type=float,
+        default=0.008,
+        help="Offset parameter for cosine noise schedule",
+    )
 
     # EMA options
     parser.add_argument("--use_ema", action="store_true", help="Enable EMA model")
@@ -50,7 +63,13 @@ def main():
     print(f"Using device: {device}")
 
     # --- Noise schedule ---
-    schedule = NoiseSchedule(num_timesteps=args.timesteps, device=device)
+    schedule = NoiseSchedule(
+        num_timesteps=args.timesteps,
+        schedule_type=args.schedule_type,
+        cosine_s=args.cosine_s,
+        device=device,
+    )
+    print(f"Noise schedule: {args.schedule_type}")
 
     # --- Model ---
     model = UNet(base_channels=args.base_channels).to(device)
