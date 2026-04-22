@@ -2,8 +2,8 @@
 Main entry point for training the diffusion model.
 
 Usage:
-    python main.py --dataset celeba --data_dir data/celeba_hq_256
-    python main.py --dataset butterfly --data_dir data/butterfly --image_size 128 --epochs 50
+    python main.py --dataset celeba --data_dir data/celeba_hq_256 --image_size 128 --epochs 50 --use_ema --use_scheduler
+    python main.py --dataset butterfly --data_dir data/butterfly 
 """
 
 import argparse
@@ -40,11 +40,12 @@ def parse_args():
     parser.add_argument("--scheduler_tmax", type=int, default=None, help="T_max for CosineAnnealingLR (defaults to total epochs)")
     parser.add_argument("--scheduler_eta_min", type=float, default=1e-6, help="Minimum learning rate for CosineAnnealingLR")
 
-
     # EMA options
     parser.add_argument("--use_ema", action="store_true", help="Enable EMA model")
     parser.add_argument("--ema_decay", type=float, default=0.999, help="EMA decay factor")
 
+    parser.add_argument("--noise_scheduler", type=str, default="linear")
+    
     return parser.parse_args()
 
 
@@ -54,7 +55,7 @@ def main():
     print(f"Using device: {device}")
 
     # --- Noise schedule ---
-    schedule = NoiseSchedule(num_timesteps=args.timesteps, device=device)
+    schedule = NoiseSchedule(num_timesteps=args.timesteps, noise_scheduler=args.noise_scheduler, device=device)
 
     # --- Model ---
     model = UNet(base_channels=args.base_channels).to(device)
@@ -90,6 +91,9 @@ def main():
         ckpt = torch.load(args.resume, map_location=device)
 
         model.load_state_dict(ckpt["model_state_dict"])
+        model = model.to(device)
+
+        model.load_state_dict(ckpt["model_state_dict"])
         if scheduler is not None and "scheduler_state_dict" in ckpt:
             scheduler.load_state_dict(ckpt["scheduler_state_dict"])
             print("  Loaded scheduler state from checkpoint")
@@ -114,7 +118,7 @@ def main():
                 T_max=t_max,
                 eta_min=args.scheduler_eta_min,
             )
-
+            
         if args.use_ema and ema_model is not None:
             if "ema_model_state_dict" in ckpt:
                 ema_model.load_state_dict(ckpt["ema_model_state_dict"])
@@ -136,7 +140,7 @@ def main():
     dataloader = get_dataloader(dataset, batch_size=args.batch_size)
     print(f"Dataset: {args.dataset} — {len(dataset)} images, {len(dataloader)} batches/epoch")
 
-    # --- Train ---
+        # --- Train ---
     trainer = Trainer(
         model=model,
         ema_model=ema_model,
