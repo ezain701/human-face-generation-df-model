@@ -1,0 +1,13 @@
+run_name=expF350_ema_faces_img128_bs1_ch64_ep350
+dataset=celeba_hq_256
+epochs=350
+batch_size=1
+image_size=128
+base_channels=64
+lr=0.0002
+sample_every=10
+train_split=2700
+test_split=300
+resume=experiments/expF300_ema_faces_img128_bs1_ch64_ep300/checkpoints/model_epoch_300.pt
+use_ema=yes
+ema_decay=0.999
