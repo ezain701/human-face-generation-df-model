@@ -110,6 +110,8 @@ class Trainer:
                 self._save_samples(epoch, image_size)
                 self._save_checkpoint(epoch)
 
+            if self.scheduler is not None:
+                self.scheduler.step()
 
         self._save_log()
 
@@ -132,7 +134,8 @@ class Trainer:
 
         if self.ema_model is not None:
             checkpoint["ema_model_state_dict"] = self.ema_model.state_dict()
-
+        if self.scheduler is not None:
+            checkpoint["scheduler_state_dict"] = self.scheduler.state_dict()
 
         torch.save(checkpoint, path)
         print(f"  Saved checkpoint to {path}")
