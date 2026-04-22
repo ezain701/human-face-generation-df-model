@@ -7,6 +7,7 @@
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+\usepackage{minted}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
@@ -39,18 +40,10 @@ component, formatting, style, styling, insert
 \end{IEEEkeywords}
 
 \section{Introduction}
-This document is a model and instructions for \LaTeX.
-Generative modelling problem.
-
-Why do we want to generate images?
-
-Why face generation matters?
-
-Introduce diffusion models, what can be achieved with Diffusion Models?
-
-The core principle is iteratively denoising from noise to structured output.
-
-Diffusion models have achieved strong results across multiple domains including image synthesis, video generation, audio synthesis, and molecular design
+Generative modelling aims to learn data distributions in order to generate realistic samples. In image generation, this involves producing images that are visually indistinguishable from real data, with applications in content creation and data augmentation.
+Human face generation is a challenging task due to complex structures and fine details, making it a strong benchmark for generative models. While Generative Adversarial Networks (GANs) \cite{b6} have achieved strong results, they often suffer from instability and mode collapse.
+Diffusion models provide a more stable alternative by learning to iteratively transform noise into structured images through a denoising process. This approach has achieved state-of-the-art performance across multiple domains \cite{b9}.
+In this work, we implement a diffusion-based model for human face generation using the CelebA-HQ dataset. We investigate the effects of architecture, resolution, training duration, and stabilization techniques such as Exponential Moving Average (EMA). Performance is evaluated using the Fréchet Inception Distance (FID), with significant improvements achieved through systematic experimentation.
 
 \section{Literature Review}
 Generative modeling aims to learn a probability distribution over high-dimensional data such that new samples can be drawn from it. Image synthesis has long served as a proving ground for generative methods, and for much of the last decade the dominant approach was Generative Adversarial Networks (GANs) \cite{b6}. GANs frame image generation as a two-player game between a generator that produces candidate samples from random noise and a discriminator that distinguishes them from real data.
@@ -72,13 +65,151 @@ Progress in generative image modeling depends on standardized benchmarks and qua
 To assess sample quality, the Fréchet Inception Distance (FID) proposed by Heusel et al. [5] has emerged as the standard metric. FID embeds both real and generated images into the feature space of a pretrained Inception-v3 network, fits a multivariate Gaussian to each set of features, and computes the Fréchet distance between the two Gaussians. 
 
 \section{Methodology}
-The diffusion model architecture.
 
-Hyperparameters.
+\subsection{Diffusion Model Framework}
+This work is based on the Denoising Diffusion Probabilistic Model (DDPM) framework. Diffusion models consist of a forward process and a reverse process. The forward process gradually adds Gaussian noise to an image over a fixed number of timesteps until it becomes pure noise. The reverse process is learned by a neural network, which iteratively removes noise to reconstruct the original image.
+The model is trained to predict the noise added at each timestep. Starting from random noise, the learned reverse process enables generation of realistic images through successive denoising steps.
 
-Data preprocessing.
+\subsection{Dataset and Preprocessing}
+Experiments were conducted on the CelebA-HQ dataset, restricted to 2700 training images and 300 test images as specified.
+Images were resized to the required resolution (64×64 or 128×128), and normalized for stable training. No additional augmentation was applied to ensure consistency across experiments.
 
-This needs to be detailed enough that someone could reproduce our work.
+\subsection{Training Setup}
+Models were trained using the Adam optimizer with a learning rate of 0.0002 and a batch size of 1. The diffusion process used 1000 timesteps.
+Key variables explored include:
+
+\begin{itemize}
+  \item image resolution
+  \item model capacity (base channels)
+  \item number of training epochs
+\end{itemize}
+
+\subsection{Stabilization Techniques}
+To improve training stability, Exponential Moving Average (EMA) was applied to model parameters, maintaining a smoothed version of the weights during training. EMA reduces noisy updates and improves sample quality during generation.
+Additionally, gradient clipping was used to limit large gradient updates and further stabilize training.
+
+\subsection{Evaluation Metric}
+Performance was evaluated using the Fréchet Inception Distance (FID), which measures the similarity between real and generated image distributions. Lower FID indicates better sample quality and diversity.
+
+\section{Experiments}
+All experiments were conducted using a Denoising Diffusion Probabilistic Model (DDPM) trained on the CelebA-HQ dataset. In accordance with the coursework specification, the dataset was limited to 2700 training images and 300 test images. Model performance was evaluated using the Fréchet Inception Distance (FID), computed between 300 generated images and the test set.
+The baseline configuration was defined as:
+\begin{itemize}
+  \item Image resolution: 128 × 128,
+  \item Base channels: 64
+  \item Batch size: 1
+  \item Learning rate: 0.0002
+  \item Diffusion timesteps: 1000
+\end{itemize}
+
+Experiments were designed to systematically explore the impact of:
+
+\begin{enumerate}
+  \item Model capacity
+  \item Image resolution
+  \item Training duration
+  \item Learning rate
+  \item Training stabilization techniques
+\end{enumerate}
+
+\subsection{Baseline Performance}
+The baseline experiment (Experiment B) established a reference point using the default configuration. While it produced visually plausible face structures, the FID score remained relatively high, indicating limited sample quality and diversity.
+This baseline provided a foundation for subsequent improvements through architectural and training modifications.
+
+\subsection{Effect of Model Capacity}
+To evaluate the effect of model capacity, experiments were conducted with varying base channel sizes.
+Reducing the number of channels (Experiment C, ch32) resulted in poorer performance, indicating that the model lacked sufficient capacity to capture the complexity of facial features. Conversely, increasing capacity (Experiment G, ch96) did not yield improvements and instead led to worse FID scores, suggesting diminishing returns and potential optimization instability.
+These results indicate that a moderate model size (ch64) provides the best balance between representational power and training stability.
+
+\subsection{Effect of Image Resolution}
+The effect of image resolution was investigated by comparing 128×128 and 64×64 configurations.
+Lower resolution models (Experiment D) achieved relatively competitive FID scores; however, visual inspection revealed reduced detail and realism in generated faces. While lower resolution simplifies the learning problem, it limits the model’s ability to generate high-quality images.
+Overall, 128×128 resolution provided better qualitative results and improved scalability, and was therefore retained for subsequent experiments.
+
+\subsection{Effect of Training Duration}
+Training duration was found to have a significant impact on model performance.
+Increasing the number of epochs led to consistent improvements in FID:
+
+\begin{itemize}
+\item 100 epochs $\to$ FID $\approx$ 181
+\item 150 epochs $\to$ FID $\approx$ 122
+\item 200 epochs $\to$ FID $\approx$ 118
+\end{itemize}
+
+However, extending training further without additional stabilization led to degradation:
+
+\begin{itemize}
+\item 250 epochs $\to$ FID $\approx$ 159
+\end{itemize}
+
+This indicates that while longer training improves performance, overtraining can negatively affect sample quality, likely due to instability in later training stages.
+
+\subsection{Effect of Learning Rate}
+A lower learning rate (Experiment J, 1e-4) was also evaluated. While this configuration resulted in more gradual training, it led to slower convergence and inferior FID scores compared to the baseline learning rate of 0.0002.
+Therefore, 0.0002 was retained as the optimal learning rate, providing a better balance between convergence speed and stability.
+
+\subsection{EMA for Training Stabilization}
+To address instability in longer training runs, Exponential Moving Average (EMA) was introduced. EMA maintains a smoothed version of model parameters, reducing the impact of noisy updates during optimization.
+A controlled experiment was conducted to validate its effectiveness over 10 epochs:
+
+\begin{itemize}
+\item Raw model $\to$ FID $\approx$ 234
+\item EMA model $\to$ FID $\approx$ 173
+\end{itemize}
+
+This demonstrated a substantial improvement even in early training.
+EMA was then applied to longer training runs, producing significant gains:
+
+\begin{itemize}
+\item 200 epochs (EMA) $\to$ FID $\approx$ 95
+\item 250 epochs (EMA) $\to$ FID $\approx$ 76
+\item 300 epochs (EMA) $\to$ FID $\approx$ 62
+\end{itemize}
+
+Notably, EMA prevented the degradation observed in non-EMA runs and enabled continued improvements with extended training.
+Qualitative Results
+Generated samples show a clear progression in visual quality as training improves. Early-stage models produce noisy or distorted faces, while later models capture more realistic facial structures, including symmetry, texture, and finer details.
+EMA-based models exhibit:
+- smoother outputs
+- fewer artifacts
+- more consistent facial features
+
+A comparison between generated and real images demonstrates that the final model closely approximates the distribution of real faces.
+
+\subsection{Results Summary}
+Table 1 summarizes the most important experimental results.
+
+\begin{table}[htbp]
+\caption{Summary of Experiments}
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Experiment} & \textbf{\textit{Configuration}}& \textbf{\textit{FID}} \\
+\hline
+Baseline (B) &  128px, ch64, 20 epochs & 309.14 \\
+C & 128px, ch32 & 261.26 \\
+D & 64px, ch64 & 216.12 \\
+E & 128px, ch64, 50 epochs & 282.86 \\
+G & 128px, ch96 & 247.07 \\
+F100 & 128px, ch64, 100 epochs & ~181 \\
+F150 & 128px, ch64, 150 epochs & ~122 \\
+F200 & 128px, ch64, 200 epochs & ~118 \\
+F250 & 128px, ch64, 250 epochs & ~159 \\
+EMA (10 epochs) & + EMA & 234 → 173 \\
+F200 EMA & 128px, ch64, EMA & ~95 \\
+F250 EMA & 128px, ch64, EMA & ~76 \\
+F300 EMA & 128px, ch64, EMA & ~62 \\
+
+\hline
+\end{tabular}
+\label{tab1}
+\end{center}
+\end{table}
+
+
+
+
+
 
 \subsection{U-Net}\label{AA}
 Define abbreviations and acronyms the first time they are used in the text, 
@@ -99,28 +230,6 @@ abbreviations in the title or heads unless they are unavoidable.
 \item Use a zero before decimal points: ``0.25'', not ``.25''. Use ``cm\textsuperscript{3}'', not ``cc''.)
 \end{itemize}
 
-\section{Experiments}
-
-\subsection{Results}
-
-
-\subsection{FID scores}
-If we don't already have the FID scores recorded, we will need to generate at least 300 images.
-
-\subsection{KID scores}
-To get a reliable KID score, we do not need to rerun the training but we need to generate at least 300 images based on the latest checkpoint file.
-
-\subsection{Hyperparameter comparisons}
-
-Number of timesteps T: more steps generally mean better samples but slower sampling. 
-
-Noise schedule: linear vs cosine.
-
-Learning rate and batch size.
-
-Model capacity (U-Net depth and width): more capacity helps up to a point, then overfits or becomes impractical.
-
-EMA (exponential moving average) of weights.
 
 \subsection{Generated image examples}
 
@@ -235,22 +344,7 @@ below the figures; table heads should appear above the tables. Insert
 figures and tables after they are cited in the text. Use the abbreviation 
 ``Fig.~\ref{fig}'', even at the beginning of a sentence.
 
-\begin{table}[htbp]
-\caption{Table Type Styles}
-\begin{center}
-\begin{tabular}{|c|c|c|c|}
-\hline
-\textbf{Table}&\multicolumn{3}{|c|}{\textbf{Table Column Head}} \\
-\cline{2-4} 
-\textbf{Head} & \textbf{\textit{Table column subhead}}& \textbf{\textit{Subhead}}& \textbf{\textit{Subhead}} \\
-\hline
-copy& More table copy$^{\mathrm{a}}$& &  \\
-\hline
-\multicolumn{4}{l}{$^{\mathrm{a}}$Sample of a Table footnote.}
-\end{tabular}
-\label{tab1}
-\end{center}
-\end{table}
+
 
 \begin{figure}[htbp]
 \centerline{\includegraphics{fig1.png}}
@@ -306,6 +400,8 @@ element symbols.
 \bibitem{b7} T. Karras, T. Aila, S. Laine, and J. Lehtinen, "Progressive Growing of GANs for Improved Quality, Stability, and Variation," in Proc. Int. Conf. Learn. Represent. (ICLR), 2018.
 [8] A. Q. Nichol and P. Dhariwal, "Improved Denoising Diffusion Probabilistic Models," in Proc. Int. Conf. Mach. Learn. (ICML), pp. 8162–8171, 2021.
 \bibitem{b8} A. Nichol and P. Dhariwal, "Improved Denoising Diffusion Probabilistic Models," in Proceedings of the International Conference on Machine Learning (ICML), pp. 8162–8171, 2021.
+\bibitem{b9} L. Yang, Z. Zhang, Y. Song, S. Hong, R. Xu, Y. Zhao, W. Zhang, B. Cui, and M.-H. Yang, "Diffusion models: A comprehensive survey of methods and applications," ACM Computing Surveys, vol. 56, no. 4, pp. 1–39, 2024.
+
 \end{thebibliography}
 \vspace{12pt}
 \color{red}
