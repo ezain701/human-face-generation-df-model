@@ -2,8 +2,8 @@
 Main entry point for training the diffusion model.
 
 Usage:
-    python main.py --dataset celeba --data_dir data/celeba_hq_256 --image_size 128 --epochs 50 --use_ema --use_scheduler
-    python main.py --dataset butterfly --data_dir data/butterfly 
+    python main.py --dataset celeba --data_dir data/celeba_hq_256
+    python main.py --dataset butterfly --data_dir data/butterfly --image_size 128 --epochs 50
 """
 
 import argparse
@@ -45,7 +45,11 @@ def parse_args():
     parser.add_argument("--ema_decay", type=float, default=0.999, help="EMA decay factor")
 
     parser.add_argument("--noise_scheduler", type=str, default="linear")
-    
+
+    # ResidualBlock options
+    parser.add_argument("--adagn", action="store_true", help="Use Adaptive Group Normalization for timestep conditioning (Dhariwal & Nichol 2021)")
+    parser.add_argument("--zero-init-conv", action="store_true", dest="zero_init_conv", help="Zero-initialize final conv of each residual block")
+
     return parser.parse_args()
 
 
@@ -58,7 +62,7 @@ def main():
     schedule = NoiseSchedule(num_timesteps=args.timesteps, noise_scheduler=args.noise_scheduler, device=device)
 
     # --- Model ---
-    model = UNet(base_channels=args.base_channels).to(device)
+    model = UNet(base_channels=args.base_channels, adagn=args.adagn, zero_init_conv=args.zero_init_conv).to(device)
     print(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
 
     # --- EMA model ---
