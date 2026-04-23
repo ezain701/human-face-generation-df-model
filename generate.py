@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument("--batch_size", type=int, default=16, help="Batch size for generation")
     parser.add_argument("--output_dir", type=str, default="generated")
     parser.add_argument("--compute_fid", action="store_true", help="Compute FID against real images")
-    parser.add_argument("--data_dir", type=str, default="data/celeba_hq_256", help="Real images dir (for FID)")
+    parser.add_argument("--data_dir", type=str, default="data/img_align_celeba", help="Real images dir (for FID)")
     return parser.parse_args()
 
 

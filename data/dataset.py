@@ -7,7 +7,7 @@ from PIL import Image
 class CelebAHQDataset(Dataset):
     """Dataset class for CelebA-HQ 256x256 images."""
 
-    def __init__(self, image_dir, image_size=256, split="train", train_size=2700):
+    def __init__(self, image_dir, image_size=256, split="train", train_size=81000):
         self.image_dir = image_dir
         self.image_paths = sorted([
             os.path.join(image_dir, f)
@@ -18,13 +18,14 @@ class CelebAHQDataset(Dataset):
         if split == "train":
             self.image_paths = self.image_paths[:train_size]
         elif split == "test":
-            self.image_paths = self.image_paths[train_size:train_size + 300]
+            self.image_paths = self.image_paths[train_size:train_size + 9000]
 
         self.transform = transforms.Compose([
+            transforms.CenterCrop(160),  # Square crop to avoid distortion for standard CelebA
             transforms.Resize((image_size, image_size)),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize([0.5], [0.5]),  # Scale to [-1, 1]
+            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),  # Scale RGB to [-1, 1]
         ])
 
     def __len__(self):

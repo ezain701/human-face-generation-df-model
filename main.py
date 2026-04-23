@@ -18,8 +18,8 @@ from training.trainer import Trainer
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a DDPM diffusion model")
     parser.add_argument("--dataset", type=str, default="celeba", choices=["celeba", "butterfly"])
-    parser.add_argument("--data_dir", type=str, default="data/celeba_hq_256")
-    parser.add_argument("--image_size", type=int, default=256)
+    parser.add_argument("--data_dir", type=str, default="data/img_align_celeba")
+    parser.add_argument("--image_size", type=int, default=128)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=2e-4)
@@ -29,6 +29,7 @@ def parse_args():
     parser.add_argument("--checkpoint_dir", type=str, default="checkpoints")
     parser.add_argument("--log_dir", type=str, default="logs")
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint to resume from")
+    parser.add_argument("--warmup_steps", type=int, default=5000, help="Number of steps for learning rate warmup")
     return parser.parse_args()
 
 
@@ -81,6 +82,7 @@ def main():
         sample_every=args.sample_every,
         image_size=args.image_size,
         start_epoch=start_epoch,
+        warmup_steps=args.warmup_steps
     )
 
     print("Training complete.")
