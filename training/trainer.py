@@ -60,7 +60,7 @@ class Trainer:
 
         for name, buf in model_buffers.items():
             ema_buffers[name].copy_(buf)
-
+            
     def train(self, num_epochs, sample_every=10, image_size=256, start_epoch=0):
         """
         Main training loop.
@@ -93,6 +93,10 @@ class Trainer:
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_grad)
 
                 self.optimizer.step()
+
+                if self.scheduler is not None:
+                    self.scheduler.step()
+
                 self._update_ema()
 
                 epoch_loss += loss.item()
@@ -100,18 +104,14 @@ class Trainer:
                 progress.set_postfix(loss=loss.item())
 
             avg_loss = epoch_loss / num_batches
-            
+
             current_lr = self.optimizer.param_groups[0]["lr"]
             self.training_log.append({"epoch": epoch, "avg_loss": avg_loss, "lr": current_lr})
             print(f"Epoch {epoch} — Average Loss: {avg_loss:.6f} — LR: {current_lr:.8f}")
 
-
             if epoch % sample_every == 0:
                 self._save_samples(epoch, image_size)
                 self._save_checkpoint(epoch)
-
-            if self.scheduler is not None:
-                self.scheduler.step()
 
         self._save_log()
 
