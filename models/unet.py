@@ -41,6 +41,12 @@ class UNet(nn.Module):
         time_emb_dim=256,
         # num_heads controls the number of attention heads in the self-attention layers.
         num_heads=4,
+        # adagn enables Adaptive Group Normalization for timestep conditioning, based on Dhariwal & Nichol.
+        # When False, timestep embedding is added directly to feature maps, as per Ho et al.
+        adagn=False,
+        # zero_init_conv zero-initializes the final convolution of each residual block
+        # Based on guided-diffusion zero_module pattern by Dhariwal & Nichol
+        zero_init_conv=False,
     ):
         super().__init__()
 
@@ -52,6 +58,8 @@ class UNet(nn.Module):
         self.attention_resolutions = attention_resolutions
         self.time_emb_dim = time_emb_dim
         self.num_heads = num_heads
+        self.adagn = adagn
+        self.zero_init_conv = zero_init_conv
 
         self.time_mlp = nn.Sequential(
             SinusoidalPositionEmbedding(base_channels),
@@ -70,7 +78,7 @@ class UNet(nn.Module):
         for level, mult in enumerate(channel_mults):
             out_ch = base_channels * mult
             for _ in range(num_res_blocks):
-                block = nn.ModuleList([ResidualBlock(channels, out_ch, time_emb_dim)])
+                block = nn.ModuleList([ResidualBlock(channels, out_ch, time_emb_dim, adagn=adagn, zero_init_conv=zero_init_conv)])
                 if level in attention_resolutions:
                     block.append(AttentionBlock(out_ch, num_heads))
                 else:
@@ -84,9 +92,9 @@ class UNet(nn.Module):
                 skip_channels.append(channels)
 
         # --- Bottleneck ---
-        self.mid_block1 = ResidualBlock(channels, channels, time_emb_dim)
+        self.mid_block1 = ResidualBlock(channels, channels, time_emb_dim, adagn=adagn, zero_init_conv=zero_init_conv)
         self.mid_attn = AttentionBlock(channels, num_heads)
-        self.mid_block2 = ResidualBlock(channels, channels, time_emb_dim)
+        self.mid_block2 = ResidualBlock(channels, channels, time_emb_dim, adagn=adagn, zero_init_conv=zero_init_conv)
 
         # --- Decoder ---
         self.up_blocks = nn.ModuleList()
@@ -96,7 +104,7 @@ class UNet(nn.Module):
             for i in range(num_res_blocks + 1):
                 skip_ch = skip_channels.pop()
                 block = nn.ModuleList([
-                    ResidualBlock(channels + skip_ch, out_ch, time_emb_dim)
+                    ResidualBlock(channels + skip_ch, out_ch, time_emb_dim, adagn=adagn, zero_init_conv=zero_init_conv)
                 ])
                 if level in attention_resolutions:
                     block.append(AttentionBlock(out_ch, num_heads))
