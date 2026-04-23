@@ -48,7 +48,7 @@ def parse_args():
 
     # ResidualBlock options
     parser.add_argument("--adagn", action="store_true", help="Use Adaptive Group Normalization for timestep conditioning (Dhariwal & Nichol 2021)")
-    parser.add_argument("--zero-init-conv", action="store_true", dest="zero_init_conv", help="Zero-initialize final conv of each residual block")
+    parser.add_argument("--zero_init_conv", action="store_true", help="Zero-initialize final conv of each residual block")
 
     return parser.parse_args()
 
@@ -59,7 +59,7 @@ def main():
     print(f"Using device: {device}")
 
     # --- Noise schedule ---
-    schedule = NoiseSchedule(num_timesteps=args.timesteps, noise_scheduler=args.noise_scheduler, device=device)
+    schedule = NoiseSchedule(num_timesteps=args.timesteps, schedule=args.noise_scheduler, device=device)
 
     # --- Model ---
     model = UNet(base_channels=args.base_channels, adagn=args.adagn, zero_init_conv=args.zero_init_conv).to(device)
