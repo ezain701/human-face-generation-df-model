@@ -190,15 +190,47 @@ Baseline (B) &  128px, ch64, 20 epochs & 309.14 \\
 C & 128px, ch32 & 261.26 \\
 D & 64px, ch64 & 216.12 \\
 E & 128px, ch64, 50 epochs & 282.86 \\
+F100 & 128px, ch64, 100 epochs & 181.60 \\
 G & 128px, ch96 & 247.07 \\
-F100 & 128px, ch64, 100 epochs & ~181 \\
-F150 & 128px, ch64, 150 epochs & ~122 \\
-F200 & 128px, ch64, 200 epochs & ~118 \\
-F250 & 128px, ch64, 250 epochs & ~159 \\
-EMA (10 epochs) & + EMA & 234 → 173 \\
+H & ch32, 50 epochs & 209.64 \\
+I & 128px, ch96, batch 1, 50 epochs & 257.59 \\
+K & 128px, ch96, lr=1e-4, 20 epochs & 247.59 \\
+F150 & 128px, ch64, 150 epochs & 122.23 \\
+F200 & 128px, ch64, 200 epochs & 118.30 \\
+F250 & 128px, ch64, 250 epochs & 159.40 \\
+EMA raw check & 128px, ch64, 10 epochs & 234 \\
+EMA (10 epochs) & + EMA & 173 \\
 F200 EMA & 128px, ch64, EMA & ~95 \\
 F250 EMA & 128px, ch64, EMA & ~76 \\
 F300 EMA & 128px, ch64, EMA & ~62 \\
+F350 EMA + cos LR & 128px, ch64, EMA, cos LR, 350 epochs & 45.02 / 46.73 \\
+F400 EMA + cos LR & 
+128px, ch64, EMA, cos LR, 400 epochs &
+44.65 \\
+F450 EMA + cos LR &
+128px, ch64, EMA, cos LR, 450 epochs &
+42.64 \\
+F500 EMA + cos LR &
+128px, ch64, EMA, cos LR, 500 epochs &
+45.92 \\
+F550 EMA + cos LR &
+128px, ch64, EMA, cos LR, 550 epochs &
+43.90 \\
+F600 EMA + cos LR &
+128px, ch64, EMA, cos LR, 600 epochs &
+41.82 \\
+F300 EMA + cos noise &
+128px, ch64, EMA, cos noise &
+314 \\
+Warmup EMA 100 &
+ch128, bs16, warmup, EMA, 100 epochs &
+108.3 \\
+Warmup EMA 300 &
+ch128, bs16, warmup, EMA, 300 epochs &
+Running \\
+Warmup EMA 400 &
+ch128, bs16, warmup, EMA, 400 epochs &
+Planned \\
 
 \hline
 \end{tabular}
