@@ -179,32 +179,83 @@ A comparison between generated and real images demonstrates that the final model
 \subsection{Results Summary}
 Table 1 summarizes the most important experimental results.
 
-\begin{table}[htbp]
-\caption{Summary of Experiments}
-\begin{center}
-\begin{tabular}{|c|c|c|}
-\hline
-\textbf{Experiment} & \textbf{\textit{Configuration}}& \textbf{\textit{FID}} \\
-\hline
-Baseline (B) &  128px, ch64, 20 epochs & 309.14 \\
-C & 128px, ch32 & 261.26 \\
-D & 64px, ch64 & 216.12 \\
-E & 128px, ch64, 50 epochs & 282.86 \\
-G & 128px, ch96 & 247.07 \\
-F100 & 128px, ch64, 100 epochs & ~181 \\
-F150 & 128px, ch64, 150 epochs & ~122 \\
-F200 & 128px, ch64, 200 epochs & ~118 \\
-F250 & 128px, ch64, 250 epochs & ~159 \\
-EMA (10 epochs) & + EMA & 234 → 173 \\
-F200 EMA & 128px, ch64, EMA & ~95 \\
-F250 EMA & 128px, ch64, EMA & ~76 \\
-F300 EMA & 128px, ch64, EMA & ~62 \\
+\begin{table*}[t]
+
+\centering
+
+\caption{Summary of Experimental Results}
+
+\small
+
+\begin{tabular}{lll}
 
 \hline
+
+\textbf{Experiment} & \textbf{Configuration} & \textbf{FID} \\
+
+\hline
+
+B & 128px, ch64, batch 1, 20 epochs & 309.14 \\
+
+C & 128px, ch32, batch 1, 20 epochs & 261.26 \\
+
+D & 64px, ch64, batch 1, 20 epochs & 216.12 \\
+
+E & 128px, ch64, batch 1, 50 epochs & 282.86 \\
+
+F100 & 128px, ch64, batch 1, 100 epochs & 181.60 \\
+
+G & 128px, ch96, batch 1, 20 epochs & 247.07 \\
+
+H & 128px, ch32, batch 1, 50 epochs & 209.64 \\
+
+I & 128px, ch96, batch 1, 50 epochs & 257.59 \\
+
+K & 128px, ch96, lr=1e-4, 20 epochs & 247.59 \\
+
+J100 & 128px, ch64, lr=1e-4, 100 epochs & 240.12 \\
+
+J250 & 128px, ch64, lr=1e-4, 250 epochs & 159.86 \\
+
+F150 & 128px, ch64, 150 epochs & 122.23 \\
+
+F200 & 128px, ch64, 200 epochs & 118.30 \\
+
+F250 raw & 128px, ch64, 250 epochs & 159.40 \\
+
+EMA raw check & ch64, 10 epochs (no EMA) & $\sim$234 \\
+
+EMA check & ch64, 10 epochs (EMA) & $\sim$173 \\
+
+F200 EMA & 128px, ch64, EMA, 200 epochs & $\sim$95 \\
+
+F250 EMA & 128px, ch64, EMA, 250 epochs & $\sim$76 \\
+
+F300 EMA & 128px, ch64, EMA, 300 epochs & $\sim$62 \\
+
+F350 EMA & 128px, ch64, EMA, 350 epochs & $\sim$63.21 \\
+
+F350 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 350 epochs & 45.02 \\
+
+F400 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 400 epochs & 44.65 \\
+
+F450 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 450 epochs & 42.64 \\
+
+F500 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 500 epochs & 45.92 \\
+
+F550 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 550 epochs & 43.90 \\
+
+F600 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 600 epochs & 41.82 \\
+
+F300 EMA + cosine noise & 128px, ch64, EMA, cosine noise & 314 \\
+
+\hline
+
 \end{tabular}
-\label{tab1}
-\end{center}
-\end{table}
+
+\label{tab:results}
+
+\end{table*}
 
 
 
