@@ -88,6 +88,10 @@ class Trainer:
 
                 loss = p_losses(self.schedule, self.model, batch, t)
 
+                if torch.isnan(loss) or torch.isinf(loss):
+                    print(f"Skipping step at epoch {epoch}, batch {i}: loss={loss.item()}")
+                    continue
+                    
                 # Scale loss so the accumulated gradient matches the mean
                 # over the effective batch, not the sum.
                 (loss / accum_steps).backward()
