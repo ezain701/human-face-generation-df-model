@@ -2,13 +2,13 @@ import torch
 import numpy as np
 from scipy.linalg import sqrtm
 from torchvision import transforms
-from torchvision.models import inception_v3
+from torchvision.models import inception_v3, Inception_V3_Weights
 from torch.utils.data import DataLoader
 
 
 def get_inception_model(device="cpu"):
     """Load pretrained InceptionV3 for FID feature extraction."""
-    model = inception_v3(pretrained=True, transform_input=False)
+    model = inception_v3(weights=Inception_V3_Weights.IMAGENET1K_V1, transform_input=False)
     model.fc = torch.nn.Identity()  # Remove final classification layer
     model.eval()
     return model.to(device)
@@ -48,10 +48,13 @@ def calculate_fid(real_features, generated_features):
     sigma_g = np.cov(generated_features, rowvar=False)
 
     diff = mu_r - mu_g
-    covmean, _ = sqrtm(sigma_r @ sigma_g, disp=False)
+    covmean = sqrtm(sigma_r @ sigma_g)
 
     if np.iscomplexobj(covmean):
+        print("complex obj")
         covmean = covmean.real
+    else:
+        print("not complex obj")
 
     fid = diff @ diff + np.trace(sigma_r + sigma_g - 2 * covmean)
     return float(fid)
