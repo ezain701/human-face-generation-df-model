@@ -238,6 +238,13 @@ Compared to EMA-only training, the addition of cosine learning rate scheduling s
 
 However, results beyond 450 epochs exhibited some fluctuations (e.g., increase at 500 epochs), indicating minor instability and diminishing returns despite the overall downward trend.
 
+\subsection{Effect of Cosine Noise Scheduling}
+
+A cosine noise schedule was also evaluated to investigate whether changing the diffusion noising process could improve sample quality. Unlike cosine learning rate scheduling, which affects the optimizer, cosine noise scheduling changes how noise is added across diffusion timesteps.
+
+The experiment used the same EMA-based configuration as the F-series baseline, with 128$\times$128 resolution, 64 base channels, batch size 1, and 300 epochs. However, replacing the standard linear noise schedule with a cosine noise schedule resulted in a significantly worse FID score of 314.
+
+This indicates that the cosine noise schedule was not effective in the current implementation. The result suggests that the diffusion noise schedule is highly sensitive, and that the original linear schedule was more stable for this setup.
 
 \subsection{Results Summary}
 Table~\ref{tab:results} summarizes the most important experimental results.
