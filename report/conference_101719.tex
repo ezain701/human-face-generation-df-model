@@ -64,29 +64,56 @@ To assess sample quality, the Fréchet Inception Distance (FID) proposed by Heus
 \section{Methodology}
 
 \subsection{Diffusion Model Framework}
+
 This work is based on the Denoising Diffusion Probabilistic Model (DDPM) framework. Diffusion models consist of a forward process and a reverse process. The forward process gradually adds Gaussian noise to an image over a fixed number of timesteps until it becomes pure noise. The reverse process is learned by a neural network, which iteratively removes noise to reconstruct the original image.
-The model is trained to predict the noise added at each timestep. Starting from random noise, the learned reverse process enables generation of realistic images through successive denoising steps.
+
+Formally, the model is trained to predict the noise component added to the image at each timestep. Given a noisy image $x_t$, the network learns to predict the noise $\epsilon$ that was added to the original image $x_0$. Starting from random noise, the learned reverse process enables generation of realistic images through successive denoising steps.
+
+\subsection{U-Net Architecture}
+
+The denoising model is implemented using a U-Net architecture, which is widely adopted in diffusion models due to its ability to capture both local and global image structure. The network follows an encoder-decoder design with skip connections between corresponding layers.
+
+The encoder progressively downsamples the input image using strided convolutions, increasing the number of feature channels at each stage. This allows the model to capture high-level semantic features. The decoder then upsamples the feature maps back to the original resolution using interpolation followed by convolution, reconstructing spatial details.
+
+Skip connections are used to transfer high-resolution feature information from the encoder to the decoder, improving reconstruction quality and stabilizing training.
+
+Each block in the network consists of convolutional layers followed by Group Normalization and a non-linear activation function. In addition, timestep conditioning is incorporated by embedding the diffusion timestep and injecting it into the network through feature-wise transformations. This allows the model to adapt its predictions based on the noise level at each timestep.
+
+The base number of channels is treated as a key hyperparameter controlling model capacity. Experiments were conducted with different configurations (32, 64, 96, and 128 channels) to evaluate its impact on performance.
 
 \subsection{Dataset and Preprocessing}
-Experiments were conducted on the CelebA-HQ dataset, restricted to 2700 training images and 300 test images as specified.
-Images were resized to the required resolution (64×64 or 128×128), and normalized for stable training. No additional augmentation was applied to ensure consistency across experiments.
+
+Experiments were conducted on the CelebA-HQ dataset, restricted to 2700 training images and 300 test images as specified. Images were resized to the required resolution (64$\times$64 or 128$\times$128) and normalized to ensure stable training. No additional data augmentation was applied in order to maintain consistency across experiments.
 
 \subsection{Training Setup}
-Models were trained using the Adam optimizer with a learning rate of 0.0002 and a batch size of 1. The diffusion process used 1000 timesteps.
+
+Models were trained using the Adam optimizer with a learning rate of $2\times10^{-4}$ and a batch size of 1. The diffusion process was defined over 1000 timesteps.
+
+The training objective minimizes the mean squared error between the predicted noise and the true noise added during the forward process.
+
 Key variables explored include:
 
 \begin{itemize}
+
   \item image resolution
+
   \item model capacity (base channels)
+
   \item number of training epochs
+
+  \item learning rate
+
 \end{itemize}
 
 \subsection{Stabilization Techniques}
-To improve training stability, Exponential Moving Average (EMA) was applied to model parameters, maintaining a smoothed version of the weights during training. EMA reduces noisy updates and improves sample quality during generation.
-Additionally, gradient clipping was used to limit large gradient updates and further stabilize training.
+
+To improve training stability, Exponential Moving Average (EMA) was applied to model parameters, maintaining a smoothed version of the weights during training. EMA reduces the impact of noisy updates and improves sample quality during generation.
+
+Additionally, gradient clipping was used to limit large gradient updates and further stabilize training. A cosine learning rate scheduler was also explored in later experiments to improve convergence during extended training.
 
 \subsection{Evaluation Metric}
-Performance was evaluated using the Fréchet Inception Distance (FID), which measures the similarity between real and generated image distributions. Lower FID indicates better sample quality and diversity.
+
+Performance was evaluated using the Fréchet Inception Distance (FID), which measures the similarity between real and generated image distributions. FID computes the distance between feature distributions extracted from a pretrained Inception network. Lower FID indicates better sample quality and diversity.
 
 \section{Experiments}
 All experiments were conducted using a Denoising Diffusion Probabilistic Model (DDPM) trained on the CelebA-HQ dataset. In accordance with the coursework specification, the dataset was limited to 2700 training images and 300 test images. Model performance was evaluated using the Fréchet Inception Distance (FID), computed between 300 generated images and the test set.
@@ -258,13 +285,6 @@ F100 (81K images) & 128$\times$128, ch128, batch 16, 100 epochs, warm-up & 41.31
 
 
 
-
-
-\subsection{U-Net}\label{AA}
-Define abbreviations and acronyms the first time they are used in the text, 
-even after they have been defined in the abstract. Abbreviations such as 
-IEEE, SI, MKS, CGS, ac, dc, and rms do not have to be defined. Do not use 
-abbreviations in the title or heads unless they are unavoidable.
 
 
 
