@@ -32,9 +32,7 @@ Pranav Pokhrel\textsuperscript{1}}
 Generative modelling aims to learn complex data distributions in order to generate realistic samples. In this project, we implement a diffusion-based model for unconditional human face generation using the CelebA-HQ dataset. The model is based on the Denoising Diffusion Probabilistic Model framework, where a neural network is trained to reverse a gradual Gaussian noising process. Experiments were conducted using a restricted dataset of 2700 training images and 300 test images, with performance evaluated using the Fréchet Inception Distance. We systematically investigated the effects of image resolution, model capacity, training duration, learning rate, and stabilisation techniques. Results show that longer training substantially improves generation quality, but also introduces instability when no stabilisation is used. Exponential Moving Average improves robustness and sample quality, reducing FID from approximately 234 to 173 in an early controlled comparison, and enabling continued improvement over longer training. The best results were obtained by combining EMA with cosine learning rate scheduling, achieving a final FID of 41.82 after 600 epochs. Qualitative results also showed clearer facial structure, improved symmetry, and reduced artifacts. Overall, the project demonstrates that diffusion models can generate realistic human faces even under limited data and computational constraints, with training stability playing a key role in final performance.
 \end{abstract}
 
-\begin{IEEEkeywords}
-component, formatting, style, styling, insert
-\end{IEEEkeywords}
+
 
 \section{Introduction}
 Generative modelling aims to learn data distributions in order to generate realistic samples. In image generation, this involves producing images that are visually indistinguishable from real data, with applications in content creation and data augmentation.
