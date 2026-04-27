@@ -246,6 +246,24 @@ The experiment used the same EMA-based configuration as the F-series baseline, w
 
 This indicates that the cosine noise schedule was not effective in the current implementation. The result suggests that the diffusion noise schedule is highly sensitive, and that the original linear schedule was more stable for this setup.
 
+\subsection{Qualitative Results}
+
+Generated samples show clear qualitative improvement as training progresses. Early models produce noisy and distorted faces, while later EMA-based models produce more coherent facial structure, improved symmetry, and fewer visible artifacts.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/f600_ema_coslr_grid.png}
+\caption{Generated samples from the best-performing model: F600 EMA with cosine learning rate scheduling.}
+\label{fig:f600_samples}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/progression_grid.png}
+\caption{Qualitative progression across experiments, showing improvement from early baseline outputs to the final EMA and cosine LR model.}
+\label{fig:progression}
+\end{figure}
+
 \subsection{Results Summary}
 Table~\ref{tab:results} summarizes the most important experimental results.
 
