@@ -144,9 +144,11 @@ This baseline provided a foundation for subsequent improvements through architec
 
 To evaluate the effect of model capacity, experiments were conducted with varying base channel sizes. At early training (20 epochs), both reducing and increasing model capacity relative to the baseline led to improved FID scores. Specifically, the smaller model (Experiment C, ch32) achieved a lower FID than the baseline, and the larger model (Experiment G, ch96) also improved upon the baseline. This suggests that model capacity alone does not directly determine early performance, and that optimization dynamics play a significant role during initial training.
 
-However, subsequent experiments focused on extending training primarily with the baseline configuration (ch64), where consistent and significant improvements were observed as training duration increased. This configuration ultimately led to the best-performing models in later stages.
+To further investigate the effect of model capacity at longer training durations, an additional experiment (Experiment L) was conducted using a reduced-capacity model (ch32) trained for 100 epochs. This configuration achieved an FID of 216.26, compared to 181.60 for the baseline configuration (ch64) at the same number of epochs (Experiment F100). This indicates that while lower-capacity models can perform competitively in early training, they do not scale as effectively with increased training duration.
 
-These results indicate that while alternative model sizes may perform well in early training, the moderate configuration (ch64) provides a reliable and stable foundation for extended training and further optimization.
+Subsequent experiments therefore focused on extending training primarily with the baseline configuration (ch64), where consistent and significant improvements were observed as training duration increased. This configuration ultimately led to the best-performing models in later stages.
+
+Overall, the results suggest that although different model capacities may yield comparable or improved performance in early training, the moderate configuration (ch64) provides a more reliable foundation for longer training and further optimization.
 
 \subsection{Effect of Image Resolution}
 
@@ -280,17 +282,9 @@ C & 128px, ch32, batch 1, 20 epochs & 261.26 \\
 D & 64px, ch64, batch 1, 20 epochs & 216.12 \\
 E & 128px, ch64, batch 1, 50 epochs & 282.86 \\
 F100 & 128px, ch64, batch 1, 100 epochs & 181.60 \\
-G & 128px, ch96, batch 1, 20 epochs & 247.07 \\
-H & 128px, ch32, batch 1, 50 epochs & 209.64 \\
-I & 128px, ch96, batch 1, 50 epochs & 257.59 \\
-K & 128px, ch96, lr=1e-4, 20 epochs & 247.59 \\
-J100 & 128px, ch64, lr=1e-4, 100 epochs & 240.12 \\
-J250 & 128px, ch64, lr=1e-4, 250 epochs & 159.86 \\
 F150 & 128px, ch64, 150 epochs & 122.23 \\
 F200 & 128px, ch64, 200 epochs & 118.30 \\
 F250 raw & 128px, ch64, 250 epochs & 159.40 \\
-EMA raw check & ch64, 10 epochs (no EMA) & $\sim$234 \\
-EMA check & ch64, 10 epochs (EMA) & $\sim$173 \\
 F200 EMA & 128px, ch64, EMA, 200 epochs & $\sim$95 \\
 F250 EMA & 128px, ch64, EMA, 250 epochs & $\sim$76 \\
 F300 EMA & 128px, ch64, EMA, 300 epochs & $\sim$62 \\
@@ -302,7 +296,16 @@ F500 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 500 epochs & 45.92 \\
 F550 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 550 epochs & 43.90 \\
 F600 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 600 epochs & 41.82 \\
 F300 EMA + cosine noise & 128px, ch64, EMA, cosine noise & 314 \\
-F100 (81K images) & 128$\times$128, ch128, batch 16, 100 epochs, warm-up & 41.31 \\
+G & 128px, ch96, batch 1, 20 epochs & 247.07 \\
+H & 128px, ch32, batch 1, 50 epochs & 209.64 \\
+I & 128px, ch96, batch 1, 50 epochs & 257.59 \\
+J100 & 128px, ch64, lr=1e-4, 100 epochs & 240.12 \\
+J250 & 128px, ch64, lr=1e-4, 250 epochs & 159.86 \\
+K & 128px, ch96, lr=1e-4, 20 epochs & 247.59 \\
+L & 128px, ch32, batch 1, 100 epochs & 216.26 \\
+EMA raw check & ch64, 10 epochs (no EMA) & $\sim$234 \\
+EMA check & ch64, 10 epochs (EMA) & $\sim$173 \\
+M (81K images) & 128$\times$128, ch128, batch 16, 100 epochs, warm-up & 41.31 \\
 \hline
 \end{tabular}
 \label{tab:results}
