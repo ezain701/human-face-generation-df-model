@@ -267,7 +267,7 @@ Generated samples show clear qualitative improvement as training progresses. Ear
 \end{figure}
 
 \subsection{Results Summary}
-Table~\ref{tab:results} summarizes the most important experimental results.
+Table\ref{tab:results} summarizes the most important experimental results.
 
 \begin{table*}[t]
 \centering
@@ -285,17 +285,17 @@ F100 & 128px, ch64, batch 1, 100 epochs & 181.60 \\
 F150 & 128px, ch64, 150 epochs & 122.23 \\
 F200 & 128px, ch64, 200 epochs & 118.30 \\
 F250 raw & 128px, ch64, 250 epochs & 159.40 \\
-F200 EMA & 128px, ch64, EMA, 200 epochs & $\sim$95 \\
-F250 EMA & 128px, ch64, EMA, 250 epochs & $\sim$76 \\
-F300 EMA & 128px, ch64, EMA, 300 epochs & $\sim$62 \\
-F350 EMA & 128px, ch64, EMA, 350 epochs & $\sim$63.21 \\
+F200 EMA & 128px, ch64, EMA, 200 epochs & 95.30 \\
+F250 EMA & 128px, ch64, EMA, 250 epochs & 76.62 \\
+F300 EMA & 128px, ch64, EMA, 300 epochs & 62.72 \\
+F350 EMA & 128px, ch64, EMA, 350 epochs & 63.21 \\
 F350 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 350 epochs & 45.02 \\
 F400 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 400 epochs & 44.65 \\
 F450 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 450 epochs & 42.64 \\
 F500 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 500 epochs & 45.92 \\
 F550 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 550 epochs & 43.90 \\
 F600 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 600 epochs & 41.82 \\
-F300 EMA + cosine noise & 128px, ch64, EMA, cosine noise & 314 \\
+F300 EMA + cosine noise & 128px, ch64, EMA, cosine noise & 314.10 \\
 G & 128px, ch96, batch 1, 20 epochs & 247.07 \\
 H & 128px, ch32, batch 1, 50 epochs & 209.64 \\
 I & 128px, ch96, batch 1, 50 epochs & 257.59 \\
@@ -303,8 +303,8 @@ J100 & 128px, ch64, lr=1e-4, 100 epochs & 240.12 \\
 J250 & 128px, ch64, lr=1e-4, 250 epochs & 159.86 \\
 K & 128px, ch96, lr=1e-4, 20 epochs & 247.59 \\
 L & 128px, ch32, batch 1, 100 epochs & 216.26 \\
-EMA raw check & ch64, 10 epochs (no EMA) & $\sim$234 \\
-EMA check & ch64, 10 epochs (EMA) & $\sim$173 \\
+EMA raw check & ch64, 10 epochs (no EMA) & 234.82 \\
+EMA check & ch64, 10 epochs (EMA) & 173.66 \\
 M (81K images) & 128$\times$128, ch128, batch 16, 100 epochs, warm-up & 41.31 \\
 \hline
 \end{tabular}
