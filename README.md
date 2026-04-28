@@ -162,3 +162,5 @@ To run all unit tests, cd to the human-face-generation-df-model-main directory a
 
 - Ho, J., Jain, A., & Abbeel, P. (2020). *Denoising Diffusion Probabilistic Models*. NeurIPS 2020.
 - Karras, T., et al. (2018). *Progressive Growing of GANs for Improved Quality, Stability, and Variation*. ICLR 2018 (CelebA-HQ dataset).
+- Dhariwal, P. and Nichol, A. *Diffusion models beat GANs on image synthesis*. Advances in Neural Information Processing Systems, vol. 34, pp. 8780–8794, 2021.
+- Nichol, A. and Dhariwal, P. *Improved Denoising Diffusion Probabilistic Models* Proceedings of the International Conference on Machine Learning (ICML), pp. 8162–8171, 2021.
