@@ -124,6 +124,13 @@ python generate.py \
 | `--checkpoint_dir` | `checkpoints` | Directory for saved checkpoints |
 | `--log_dir` | `logs` | Directory for training logs and samples |
 | `--resume` | `None` | Path to checkpoint to resume from |
+| `--use_scheduler` | False | Enable cosine annealing LR scheduler|
+| `--scheduler_tmax` | `None` | T_max for CosineAnnealingLR (defaults to total epochs) |
+| `--scheduler_eta_min` | `1e-6` | Minimum learning rate for cosine annealing LR |
+| `--use_ema` | False | Enable EMA model |
+| `--ema_decay` | 0.999 | EMA decay factor |
+
+
 
 ## Evaluation
 
