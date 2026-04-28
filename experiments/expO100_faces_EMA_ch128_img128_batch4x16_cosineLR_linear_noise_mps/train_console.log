@@ -1,0 +1,111 @@
+python main.py --image_size 128 --batch_size 4 --accum_steps 16 --use_scheduler --noise_scheduler linear --use_ema
+Using device: mps
+Noise scheduler: linear
+Model parameters: 34,238,467
+EMA enabled (decay=0.999)
+Scheduler enabled: CosineAnnealingLR(T_max=100, eta_min=1e-06)
+Dataset: celeba — 2700 images, 675 batches/epoch
+Epoch 1 — Average Loss: 0.178044 - LR: 0.0002
+Epoch 2 — Average Loss: 0.039622 - LR: 0.0001999509027563903
+Epoch 3 — Average Loss: 0.033566 - LR: 0.00019980365947861302
+Epoch 4 — Average Loss: 0.033721 - LR: 0.00019955841547800645
+Epoch 5 — Average Loss: 0.027624 - LR: 0.00019921541278079054
+Epoch 6 — Average Loss: 0.026855 - LR: 0.0001987749898892162
+Epoch 7 — Average Loss: 0.020332 - LR: 0.00019823758144750452
+Epoch 8 — Average Loss: 0.019625 - LR: 0.00019760371781290536
+Epoch 9 — Average Loss: 0.018919 - LR: 0.00019687402453229879
+Epoch 10 — Average Loss: 0.017694 - LR: 0.00019604922172485585
+Epoch 11 — Average Loss: 0.017646 - LR: 0.0001951301233713678
+Epoch 12 — Average Loss: 0.017869 - LR: 0.00019411763651094546
+Epoch 13 — Average Loss: 0.016485 - LR: 0.00019301276034588104
+Epoch 14 — Average Loss: 0.014879 - LR: 0.00019181658525555613
+Epoch 15 — Average Loss: 0.016779 - LR: 0.00019053029172036898
+Epoch 16 — Average Loss: 0.015163 - LR: 0.00018915514915674264
+Epoch 17 — Average Loss: 0.015147 - LR: 0.00018769251466436445
+Epoch 18 — Average Loss: 0.014752 - LR: 0.00018614383168689242
+Epoch 19 — Average Loss: 0.015224 - LR: 0.00018451062858745054
+Epoch 20 — Average Loss: 0.014711 - LR: 0.00018279451714031894
+Epoch 21 — Average Loss: 0.014667 - LR: 0.0001809971909403073
+Epoch 22 — Average Loss: 0.013770 - LR: 0.00017912042373138123
+Epoch 23 — Average Loss: 0.014155 - LR: 0.00017716606765619107
+Epoch 24 — Average Loss: 0.012919 - LR: 0.00017513605142823076
+Epoch 25 — Average Loss: 0.013494 - LR: 0.00017303237842843048
+Epoch 26 — Average Loss: 0.013344 - LR: 0.0001708571247280615
+Epoch 27 — Average Loss: 0.014479 - LR: 0.00016861243703990454
+Epoch 28 — Average Loss: 0.012842 - LR: 0.00016630053059970337
+Epoch 29 — Average Loss: 0.013165 - LR: 0.00016392368697999463
+Epoch 30 — Average Loss: 0.013625 - LR: 0.00016148425183847118
+Epoch 31 — Average Loss: 0.011652 - LR: 0.0001589846326031011
+Epoch 32 — Average Loss: 0.013513 - LR: 0.000156427296096287
+Epoch 33 — Average Loss: 0.013125 - LR: 0.00015381476610041014
+Epoch 34 — Average Loss: 0.014614 - LR: 0.00015114962086716193
+Epoch 35 — Average Loss: 0.013608 - LR: 0.00014843449057312067
+Epoch 36 — Average Loss: 0.013592 - LR: 0.0001456720547240849
+Epoch 37 — Average Loss: 0.014505 - LR: 0.0001428650395107247
+Epoch 38 — Average Loss: 0.012266 - LR: 0.00014001621511816064
+Epoch 39 — Average Loss: 0.012877 - LR: 0.00013712839299212545
+Epoch 40 — Average Loss: 0.012402 - LR: 0.00013420442306440647
+Epoch 41 — Average Loss: 0.012857 - LR: 0.00013124719094030724
+Epoch 42 — Average Loss: 0.013110 - LR: 0.00012825961505090328
+Epoch 43 — Average Loss: 0.013275 - LR: 0.00012524464377290298
+Epoch 44 — Average Loss: 0.012797 - LR: 0.00012220525251895595
+Epoch 45 — Average Loss: 0.013109 - LR: 0.00011914444080127957
+Epoch 46 — Average Loss: 0.011816 - LR: 0.00011606522927150294
+Epoch 47 — Average Loss: 0.012743 - LR: 0.00011297065673964826
+Epoch 48 — Average Loss: 0.012723 - LR: 0.00010986377717519214
+Epoch 49 — Average Loss: 0.011997 - LR: 0.00010674765669316666
+Epoch 50 — Average Loss: 0.013120 - LR: 0.00010362537052827374
+Epoch 51 — Average Loss: 0.012707 - LR: 0.00010049999999999998
+Epoch 52 — Average Loss: 0.012107 - LR: 9.737462947172621e-05
+Epoch 53 — Average Loss: 0.012684 - LR: 9.42523433068333e-05
+Epoch 54 — Average Loss: 0.012352 - LR: 9.11362228248078e-05
+Epoch 55 — Average Loss: 0.011904 - LR: 8.802934326035171e-05
+Epoch 56 — Average Loss: 0.011278 - LR: 8.4934770728497e-05
+Epoch 57 — Average Loss: 0.012881 - LR: 8.185555919872038e-05
+Epoch 58 — Average Loss: 0.011493 - LR: 7.879474748104403e-05
+Epoch 59 — Average Loss: 0.011969 - LR: 7.575535622709693e-05
+Epoch 60 — Average Loss: 0.012249 - LR: 7.274038494909669e-05
+Epoch 61 — Average Loss: 0.011725 - LR: 6.975280905969276e-05
+Epoch 62 — Average Loss: 0.012133 - LR: 6.679557693559351e-05
+Epoch 63 — Average Loss: 0.012486 - LR: 6.387160700787457e-05
+Epoch 64 — Average Loss: 0.012114 - LR: 6.098378488183932e-05
+Epoch 65 — Average Loss: 0.012242 - LR: 5.813496048927527e-05
+Epoch 66 — Average Loss: 0.013115 - LR: 5.53279452759151e-05
+Epoch 67 — Average Loss: 0.012913 - LR: 5.256550942687932e-05
+Epoch 68 — Average Loss: 0.011441 - LR: 4.985037913283806e-05
+Epoch 69 — Average Loss: 0.013206 - LR: 4.718523389958982e-05
+Epoch 70 — Average Loss: 0.012936 - LR: 4.4572703903713007e-05
+Epoch 71 — Average Loss: 0.011496 - LR: 4.2015367396898945e-05
+Epoch 72 — Average Loss: 0.012007 - LR: 3.951574816152884e-05
+Epoch 73 — Average Loss: 0.011608 - LR: 3.707631302000538e-05
+Epoch 74 — Average Loss: 0.011967 - LR: 3.469946940029666e-05
+Epoch 75 — Average Loss: 0.012286 - LR: 3.238756296009548e-05
+Epoch 76 — Average Loss: 0.011646 - LR: 3.014287527193854e-05
+Epoch 77 — Average Loss: 0.012098 - LR: 2.7967621571569583e-05
+Epoch 78 — Average Loss: 0.011688 - LR: 2.586394857176928e-05
+Epoch 79 — Average Loss: 0.011009 - LR: 2.383393234380899e-05
+Epoch 80 — Average Loss: 0.011955 - LR: 2.1879576268618814e-05
+Epoch 81 — Average Loss: 0.011243 - LR: 2.000280905969275e-05
+Epoch 82 — Average Loss: 0.011039 - LR: 1.8205482859681115e-05
+Epoch 83 — Average Loss: 0.011842 - LR: 1.6489371412549527e-05
+Epoch 84 — Average Loss: 0.010953 - LR: 1.4856168313107602e-05
+Epoch 85 — Average Loss: 0.011769 - LR: 1.3307485335635579e-05
+Epoch 86 — Average Loss: 0.011502 - LR: 1.184485084325741e-05
+Epoch 87 — Average Loss: 0.011340 - LR: 1.046970827963108e-05
+Epoch 88 — Average Loss: 0.012141 - LR: 9.183414744443904e-06
+Epoch 89 — Average Loss: 0.011923 - LR: 7.987239654118995e-06
+Epoch 90 — Average Loss: 0.010973 - LR: 6.882363489054571e-06
+Epoch 91 — Average Loss: 0.011816 - LR: 5.869876628632227e-06
+Epoch 92 — Average Loss: 0.011130 - LR: 4.950778275144179e-06
+Epoch 93 — Average Loss: 0.011715 - LR: 4.125975467701221e-06
+Epoch 94 — Average Loss: 0.011415 - LR: 3.396282187094643e-06
+Epoch 95 — Average Loss: 0.012012 - LR: 2.762418552495474e-06
+Epoch 96 — Average Loss: 0.012676 - LR: 2.225010110783804e-06
+Epoch 97 — Average Loss: 0.012292 - LR: 1.7845872192094631e-06
+Epoch 98 — Average Loss: 0.010722 - LR: 1.4415845219935408e-06
+Epoch 99 — Average Loss: 0.011234 - LR: 1.1963405213869801e-06
+Epoch 100 — Average Loss: 0.011818 - LR: 1.0490972436097059e-06
+  Saved samples to logs/samples_epoch_100.png
+  Saved checkpoint to checkpoints/model_epoch_100.pt
+Saved training log to logs/training_log.json
+Training complete.
