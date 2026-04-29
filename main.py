@@ -29,6 +29,7 @@ def parse_args():
     parser.add_argument("--checkpoint_dir", type=str, default="checkpoints")
     parser.add_argument("--log_dir", type=str, default="logs")
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint to resume from")
+    parser.add_argument("--warmup_steps", type=int, default=5000, help="Number of steps for learning rate warmup")
     return parser.parse_args()
 
 
@@ -81,6 +82,7 @@ def main():
         sample_every=args.sample_every,
         image_size=args.image_size,
         start_epoch=start_epoch,
+        warmup_steps=args.warmup_steps
     )
 
     print("Training complete.")

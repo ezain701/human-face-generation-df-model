@@ -36,7 +36,7 @@ class Trainer:
 
         self.training_log = []
 
-    def train(self, num_epochs, sample_every=10, image_size=256, start_epoch=0):
+    def train(self, num_epochs, sample_every=10, image_size=256, start_epoch=0, warmup_steps=5000):
         """
         Main training loop.
 
@@ -45,8 +45,18 @@ class Trainer:
             sample_every: Generate sample images every N epochs.
             image_size: Resolution of generated samples.
             start_epoch: Epoch to resume from (0 = start fresh).
+            warmup_steps: Number of steps for learning rate warmup.
         """
         self.model.train()
+        
+        # Set up linear warmup scheduler
+        def lr_lambda(current_step: int):
+            if current_step < warmup_steps:
+                return float(current_step) / float(max(1, warmup_steps))
+            return 1.0
+        
+        scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
+        global_step = start_epoch * len(self.dataloader)  # Estimate starting step if resuming
 
         for epoch in range(start_epoch + 1, num_epochs + 1):
             epoch_loss = 0.0
@@ -65,10 +75,15 @@ class Trainer:
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
                 self.optimizer.step()
+                scheduler.step()
 
                 epoch_loss += loss.item()
                 num_batches += 1
-                progress.set_postfix(loss=loss.item())
+                global_step += 1
+                progress.set_postfix(
+                    loss=loss.item(), 
+                    lr=self.optimizer.param_groups[0]['lr']
+                )
 
             avg_loss = epoch_loss / num_batches
             self.training_log.append({"epoch": epoch, "avg_loss": avg_loss})
