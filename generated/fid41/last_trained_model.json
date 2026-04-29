@@ -12,7 +12,6 @@ checkpoint_dir: checkpoints
 log_dir: logs
 warmup_steps: 5000
 resume: None
-Why this is likely correct:
 
 13 apr
 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True /scratch/aml/human-face-generation-df-model/.venv/bin/python generate.py --checkpoint checkpoints/model_epoch_100.pt --num_images 300 --image_size 128 --compute_fid --data_dir data/img_align_celeba --batch_size 16

@@ -17,3 +17,4 @@ notebooks/.ipynb_checkpoints/
 celeba_hq_256/*
 *.jpg
 *.png
+.codex
