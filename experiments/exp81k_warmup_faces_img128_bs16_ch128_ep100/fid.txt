@@ -1,0 +1,6 @@
+Using device: cuda
+Loaded checkpoint: checkpoints/model_epoch_100.pt (epoch 100)
+Generated images directory: generated/fid41/
+Generated images: 300
+Grid preview: generated/fid41/grid_sample.png
+FID Score: 41.31
