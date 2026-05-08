@@ -32,7 +32,7 @@ def q_sample(schedule, x_start, t, noise=None):
     return sqrt_alpha * x_start + sqrt_one_minus_alpha * noise
 
 
-def p_losses(schedule, model, x_start, t):
+def p_losses(schedule, model, x_start, t, text_emb=None):
     """
     Compute training loss: predict the noise that was added at timestep t.
 
@@ -40,5 +40,8 @@ def p_losses(schedule, model, x_start, t):
     """
     noise = torch.randn_like(x_start)
     x_noisy = q_sample(schedule, x_start, t, noise=noise)
-    predicted_noise = model(x_noisy, t)
+    if text_emb is None:
+        predicted_noise = model(x_noisy, t)
+    else:
+        predicted_noise = model(x_noisy, t, text_emb)
     return F.mse_loss(predicted_noise, noise)

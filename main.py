@@ -11,6 +11,8 @@ import copy
 import torch
 
 from models.unet import UNet
+from models.clip_text_encoder import CLIPTextEncoder, CLIPTokenizerAdapter
+from models.text_encoder import PromptTextEncoder, SimpleTokenizer
 from models.noise_schedule import NoiseSchedule
 from data.dataset import CelebAHQDataset, ButterflyDataset, get_dataloader
 from training.trainer import Trainer
@@ -19,13 +21,40 @@ from training.trainer import Trainer
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a DDPM diffusion model")
     parser.add_argument("--dataset", type=str, default="celeba", choices=["celeba", "butterfly"])
-    parser.add_argument("--data_dir", type=str, default="data/celeba_hq_256")
-    parser.add_argument("--image_size", type=int, default=256)
+    parser.add_argument("--data_dir", type=str, default="/scratch/pmoney/img_align_celeba")
+    parser.add_argument("--image_size", type=int, default=192)
+    parser.add_argument("--train_size", type=int, default=27000, help="Number of CelebA training images to use")
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--timesteps", type=int, default=1000)
-    parser.add_argument("--base_channels", type=int, default=128)
+    parser.add_argument("--base_channels", type=int, default=64)
+    parser.add_argument("--text_conditioning", action="store_true", help="Train the model with prompt conditioning")
+    parser.add_argument("--caption_file", type=str, default=None, help="Optional captions file keyed by image filename")
+    parser.add_argument("--default_caption", type=str, default=None, help="Fallback prompt when an image has no caption")
+    parser.add_argument("--text_embed_dim", type=int, default=256)
+    parser.add_argument("--text_vocab_size", type=int, default=8192)
+    parser.add_argument("--text_max_length", type=int, default=32)
+    parser.add_argument(
+        "--text_encoder_type",
+        type=str,
+        default="simple",
+        choices=["simple", "clip"],
+        help="Prompt encoder backend. clip uses a pretrained CLIP text encoder.",
+    )
+    parser.add_argument("--clip_model_name", type=str, default="openai/clip-vit-base-patch32")
+    parser.add_argument("--finetune_clip_text_encoder", action="store_true", help="Allow CLIP text encoder finetuning")
+    parser.add_argument("--caption_dropout", type=float, default=0.1, help="Classifier-free guidance dropout probability")
+    parser.add_argument("--sample_prompts", nargs="*", default=None, help="Fixed prompts to sample at each checkpoint")
+    parser.add_argument("--sample_prompt_file", type=str, default=None, help="Optional text file with one fixed sample prompt per line")
+    parser.add_argument("--sample_guidance_scale", type=float, default=3.0, help="Guidance scale for fixed prompt samples")
+    parser.add_argument(
+        "--augment_level",
+        type=str,
+        default="face_safe",
+        choices=["none", "basic", "face_safe", "strong"],
+        help="Image augmentation strength. face_safe is recommended for aligned faces.",
+    )
     parser.add_argument("--sample_every", type=int, default=10)
     parser.add_argument("--checkpoint_dir", type=str, default="checkpoints")
     parser.add_argument("--log_dir", type=str, default="logs")
@@ -36,6 +65,7 @@ def parse_args():
         default=1.0,
         help="Max gradient norm. Set <= 0 to disable gradient clipping.",
     )
+    parser.add_argument("--use_amp", action="store_true", help="Use CUDA automatic mixed precision to reduce memory use")
     parser.add_argument("--use_scheduler", action="store_true", help="Enable cosine annealing scheduler")
     parser.add_argument("--scheduler_tmax", type=int, default=None, help="T_max for CosineAnnealingLR (defaults to total epochs)")
     parser.add_argument("--scheduler_eta_min", type=float, default=1e-6, help="Minimum learning rate for CosineAnnealingLR")
@@ -57,20 +87,55 @@ def main():
     schedule = NoiseSchedule(num_timesteps=args.timesteps, device=device)
 
     # --- Model ---
-    model = UNet(base_channels=args.base_channels).to(device)
+    tokenizer = None
+    text_encoder = None
+    text_emb_dim = None
+    if args.text_conditioning:
+        if args.text_encoder_type == "clip":
+            tokenizer = CLIPTokenizerAdapter(
+                model_name=args.clip_model_name,
+                max_length=args.text_max_length,
+            )
+            text_encoder = CLIPTextEncoder(
+                model_name=args.clip_model_name,
+                freeze=not args.finetune_clip_text_encoder,
+            ).to(device)
+            text_emb_dim = text_encoder.embed_dim
+        else:
+            tokenizer = SimpleTokenizer(vocab_size=args.text_vocab_size, max_length=args.text_max_length)
+            text_encoder = PromptTextEncoder(
+                vocab_size=args.text_vocab_size,
+                max_length=args.text_max_length,
+                embed_dim=args.text_embed_dim,
+            ).to(device)
+            text_emb_dim = args.text_embed_dim
+    model = UNet(base_channels=args.base_channels, text_emb_dim=text_emb_dim).to(device)
     print(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
+    if text_encoder is not None:
+        print(f"Text encoder parameters: {sum(p.numel() for p in text_encoder.parameters()):,}")
 
     # --- EMA model ---
     ema_model = None
+    ema_text_encoder = None
     if args.use_ema:
         ema_model = copy.deepcopy(model).to(device)
         ema_model.eval()
         for p in ema_model.parameters():
             p.requires_grad = False
+        if text_encoder is not None and (
+            args.text_encoder_type == "simple" or args.finetune_clip_text_encoder
+        ):
+            ema_text_encoder = copy.deepcopy(text_encoder).to(device)
+            ema_text_encoder.eval()
+            for p in ema_text_encoder.parameters():
+                p.requires_grad = False
         print(f"EMA enabled (decay={args.ema_decay})")
 
     # --- Optimizer ---
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    parameters = list(model.parameters())
+    if text_encoder is not None:
+        parameters.extend(param for param in text_encoder.parameters() if param.requires_grad)
+    optimizer = torch.optim.Adam(parameters, lr=args.lr)
     scheduler = None
     if args.use_scheduler:
         t_max = args.scheduler_tmax if args.scheduler_tmax is not None else args.epochs
@@ -90,6 +155,13 @@ def main():
         ckpt = torch.load(args.resume, map_location=device)
 
         model.load_state_dict(ckpt["model_state_dict"])
+        if (
+            text_encoder is not None
+            and (args.text_encoder_type == "simple" or args.finetune_clip_text_encoder)
+            and "text_encoder_state_dict" in ckpt
+        ):
+            text_encoder.load_state_dict(ckpt["text_encoder_state_dict"])
+            print("  Loaded text encoder state from checkpoint")
         if scheduler is not None and "scheduler_state_dict" in ckpt:
             scheduler.load_state_dict(ckpt["scheduler_state_dict"])
             print("  Loaded scheduler state from checkpoint")
@@ -123,24 +195,81 @@ def main():
             else:
                 ema_model.load_state_dict(model.state_dict())
                 print("  No EMA weights found in checkpoint; initialized EMA from model weights")
+            if ema_text_encoder is not None:
+                if "ema_text_encoder_state_dict" in ckpt:
+                    ema_text_encoder.load_state_dict(ckpt["ema_text_encoder_state_dict"])
+                    print("  Loaded EMA text encoder weights from checkpoint")
+                else:
+                    ema_text_encoder.load_state_dict(text_encoder.state_dict())
+                    print("  No EMA text encoder weights found; initialized EMA text encoder")
 
         start_epoch = ckpt.get("epoch", 0)
         print(f"  Resumed at epoch {start_epoch}")
 
     # --- Dataset ---
+    default_caption = args.default_caption
     if args.dataset == "celeba":
-        dataset = CelebAHQDataset(args.data_dir, image_size=args.image_size, split="train")
+        if default_caption is None:
+            default_caption = "a portrait photo of a human face"
+        dataset = CelebAHQDataset(
+            args.data_dir,
+            image_size=args.image_size,
+            split="train",
+            train_size=args.train_size,
+            caption_file=args.caption_file,
+            default_caption=default_caption,
+            return_captions=args.text_conditioning,
+            augment_level=args.augment_level,
+        )
     else:
-        dataset = ButterflyDataset(args.data_dir, image_size=args.image_size)
+        if default_caption is None:
+            default_caption = "a butterfly"
+        dataset = ButterflyDataset(
+            args.data_dir,
+            image_size=args.image_size,
+            caption_file=args.caption_file,
+            default_caption=default_caption,
+            return_captions=args.text_conditioning,
+            augment_level=args.augment_level,
+        )
 
     dataloader = get_dataloader(dataset, batch_size=args.batch_size)
     print(f"Dataset: {args.dataset} — {len(dataset)} images, {len(dataloader)} batches/epoch")
 
+    sample_prompts = args.sample_prompts or []
+    if args.sample_prompt_file:
+        with open(args.sample_prompt_file) as handle:
+            sample_prompts.extend(line.strip() for line in handle if line.strip())
+    if args.text_conditioning and not sample_prompts:
+        sample_prompts = [
+            "a portrait photo of a smiling person with eyeglasses",
+            "a portrait photo of a person with blond hair",
+            "a portrait photo of a person wearing a hat",
+            "a portrait photo of an older person with gray hair",
+        ]
+
     # --- Train ---
     trainer = Trainer(
         model=model,
+        tokenizer=tokenizer,
+        text_encoder=text_encoder,
         ema_model=ema_model,
+        ema_text_encoder=ema_text_encoder,
         ema_decay=args.ema_decay,
+        caption_dropout=args.caption_dropout,
+        text_config={
+            "text_encoder_type": args.text_encoder_type,
+            "text_embed_dim": args.text_embed_dim,
+            "text_vocab_size": args.text_vocab_size,
+            "text_max_length": args.text_max_length,
+            "clip_model_name": args.clip_model_name,
+            "clip_embed_dim": text_emb_dim,
+            "finetune_clip_text_encoder": args.finetune_clip_text_encoder,
+        } if args.text_conditioning else None,
+        save_text_encoder=args.text_encoder_type == "simple" or args.finetune_clip_text_encoder,
+        use_amp=args.use_amp,
+        sample_prompts=sample_prompts,
+        guidance_scale=args.sample_guidance_scale,
         schedule=schedule,
         dataloader=dataloader,
         optimizer=optimizer,

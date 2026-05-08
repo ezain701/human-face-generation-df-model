@@ -39,6 +39,8 @@ class UNet(nn.Module):
         attention_resolutions=(2,),
         # time_emb_dim controls the dimensionality of the time embedding used in the residual blocks.
         time_emb_dim=256,
+        # text_emb_dim enables prompt conditioning when a text embedding is provided.
+        text_emb_dim=None,
         # num_heads controls the number of attention heads in the self-attention layers.
         num_heads=4,
     ):
@@ -51,6 +53,7 @@ class UNet(nn.Module):
         self.num_res_blocks = num_res_blocks
         self.attention_resolutions = attention_resolutions
         self.time_emb_dim = time_emb_dim
+        self.text_emb_dim = text_emb_dim
         self.num_heads = num_heads
 
         self.time_mlp = nn.Sequential(
@@ -58,6 +61,16 @@ class UNet(nn.Module):
             nn.Linear(base_channels, time_emb_dim),
             nn.SiLU(),
             nn.Linear(time_emb_dim, time_emb_dim),
+        )
+        self.text_mlp = (
+            nn.Sequential(
+                nn.LayerNorm(text_emb_dim),
+                nn.Linear(text_emb_dim, time_emb_dim),
+                nn.SiLU(),
+                nn.Linear(time_emb_dim, time_emb_dim),
+            )
+            if text_emb_dim is not None
+            else None
         )
 
         self.input_conv = nn.Conv2d(in_channels, base_channels, 3, padding=1)
@@ -111,8 +124,12 @@ class UNet(nn.Module):
         self.output_norm = nn.GroupNorm(8, channels)
         self.output_conv = nn.Conv2d(channels, out_channels, 3, padding=1)
 
-    def forward(self, x, t):
+    def forward(self, x, t, text_emb=None):
         t_emb = self.time_mlp(t)
+        if self.text_mlp is not None:
+            if text_emb is None:
+                text_emb = torch.zeros(x.shape[0], self.text_emb_dim, device=x.device, dtype=x.dtype)
+            t_emb = t_emb + self.text_mlp(text_emb)
         x = self.input_conv(x)
         skips = [x]
 
