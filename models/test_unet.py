@@ -83,6 +83,13 @@ def test_unet_init_set_time_emb_dim():
     # Assert
     assert model.time_emb_dim == 512    
 
+def test_unet_init_set_text_emb_dim():
+    # Act
+    model = UNet(text_emb_dim=256)
+
+    # Assert
+    assert model.text_emb_dim == 256
+
 def test_unet_init_set_num_heads():
     # Act
     model = UNet(num_heads=8)
@@ -140,3 +147,28 @@ def test_unet_forward_pass_output_tensor_is_not_inf():
 
     # Assert
     assert not torch.isinf(output_tensor).any()      
+
+
+def test_unet_forward_pass_accepts_text_embedding():
+    # Arrange
+    batch_size = 2
+    in_channels = 3
+    out_channels = 3
+    image_size = 64
+    text_emb_dim = 256
+    model = UNet(
+        in_channels=in_channels,
+        out_channels=out_channels,
+        base_channels=16,
+        channel_mults=(1, 2),
+        text_emb_dim=text_emb_dim,
+    )
+    input_tensor = torch.randn(batch_size, in_channels, image_size, image_size)
+    t = torch.randint(0, 1000, (batch_size,))
+    text_emb = torch.randn(batch_size, text_emb_dim)
+
+    # Act
+    output_tensor = model(input_tensor, t, text_emb)
+
+    # Assert
+    assert output_tensor.shape == (batch_size, out_channels, image_size, image_size)

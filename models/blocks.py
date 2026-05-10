@@ -23,7 +23,7 @@ class SinusoidalPositionEmbedding(nn.Module):
 
 
 class ResidualBlock(nn.Module):
-    """Residual block with timestep conditioning."""
+    """Residual block with timestep and optional prompt conditioning."""
 
     def __init__(self, in_channels, out_channels, time_emb_dim, groups=8):
         super().__init__()
@@ -69,7 +69,7 @@ class AttentionBlock(nn.Module):
         residual = x
         x = self.norm(x)
         x = x.view(b, c, h * w).permute(0, 2, 1)
-        x, _ = self.attention(x, x, x)
+        x, _ = self.attention(x, x, x, need_weights=False)
         x = x.permute(0, 2, 1).view(b, c, h, w)
         return x + residual
 
