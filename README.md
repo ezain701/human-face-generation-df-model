@@ -2,8 +2,6 @@
 
 A PyTorch implementation of a Denoising Diffusion Probabilistic Model (DDPM) for generating realistic human faces, trained on the CelebA-HQ dataset.
 
-Based on the paper: Ho et al., *"Denoising Diffusion Probabilistic Models"*, NeurIPS 2020.
-
 ## Project Structure
 
 ```
@@ -15,7 +13,7 @@ human-face-generation-df-model/
 ├── models/
 │   ├── blocks.py            # Reusable layers (ResBlock, Attention, Up/Downsample)
 │   ├── unet.py              # U-Net noise prediction network
-│   ├── noise_schedule.py    # Linear beta schedule and derived coefficients
+│   ├── noise_schedule.py    # Supports Linear beta schedule based on Ho et al (the default) and a Cosine noise scheduler based on Nichol & Dhariwal
 │   ├── forward_diffusion.py # Forward process (q_sample) and training loss
 │   └── reverse_diffusion.py # Reverse process (sampling / generation)
 │
@@ -48,8 +46,9 @@ The diffusion model operates in two phases:
 
 - **U-Net** with residual blocks, self-attention, and skip connections
 - **Sinusoidal timestep embeddings** to condition the network on the current diffusion step
-- **Linear noise schedule** with \(\beta\) linearly increasing from 1e-4 to 0.02
-
+- **Linear noise schedule** with \(\beta\) linearly increasing from 1e-4 to 0.02, is the default noise scheduler
+- **Cosine noise schedule** optional setting to preserve image information more gradually across timesteps
+ 
 ## Setup
 
 ### 1. Install Dependencies
@@ -125,10 +124,12 @@ python generate.py \
 | `--log_dir` | `logs` | Directory for training logs and samples |
 | `--resume` | `None` | Path to checkpoint to resume from |
 | `--use_scheduler` | False | Enable cosine annealing LR scheduler|
+| `--noise_scheduler` | `linear` | Choose linear or cosine noise scheduler |
 | `--scheduler_tmax` | `None` | T_max for CosineAnnealingLR (defaults to total epochs) |
 | `--scheduler_eta_min` | `1e-6` | Minimum learning rate for cosine annealing LR |
 | `--use_ema` | False | Enable EMA model |
 | `--ema_decay` | 0.999 | EMA decay factor |
+| `--accum_steps` | 1 | Accumulated gradients over mini-batches for larger effective batch sizes. Inspired by Ott et al., 2018 |
 
 
 
@@ -164,3 +165,4 @@ To run all unit tests, cd to the human-face-generation-df-model-main directory a
 - Karras, T., et al. (2018). *Progressive Growing of GANs for Improved Quality, Stability, and Variation*. ICLR 2018 (CelebA-HQ dataset).
 - Dhariwal, P. and Nichol, A. *Diffusion models beat GANs on image synthesis*. Advances in Neural Information Processing Systems, vol. 34, pp. 8780–8794, 2021.
 - Nichol, A. and Dhariwal, P. *Improved Denoising Diffusion Probabilistic Models* Proceedings of the International Conference on Machine Learning (ICML), pp. 8162–8171, 2021.
+- Ott, M., Edunov, S., Grangier, D., and Auli, M. *Scaling Neural Machine Translation*. Proceedings of the Third Conference on Machine Translation (WMT 2018), Brussels, Belgium, pp. 1–9, 2018.
