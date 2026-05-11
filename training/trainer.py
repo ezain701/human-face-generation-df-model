@@ -26,8 +26,7 @@ class Trainer:
         checkpoint_dir="checkpoints",
         log_dir="logs",
         scheduler=None,
-        warmup_scheduler=None,
-        warmup_steps=0,
+        scheduler_steps_per_call="epoch",
     ):
         self.model = model.to(device)
         self.schedule = schedule
@@ -40,8 +39,7 @@ class Trainer:
         self.log_dir = log_dir
         self.clip_grad = clip_grad
         self.scheduler = scheduler
-        self.warmup_scheduler = warmup_scheduler
-        self.warmup_steps = warmup_steps
+        self.scheduler_steps_per_call = scheduler_steps_per_call
 
         os.makedirs(checkpoint_dir, exist_ok=True)
         os.makedirs(log_dir, exist_ok=True)
@@ -100,8 +98,8 @@ class Trainer:
                 self.optimizer.step()
                 self._update_ema()
 
-                if self.warmup_scheduler is not None and global_step < self.warmup_steps:
-                    self.warmup_scheduler.step()
+                if self.scheduler is not None and self.scheduler_steps_per_call == "batch":
+                    self.scheduler.step()
 
                 epoch_loss += loss.item()
                 num_batches += 1
@@ -121,7 +119,7 @@ class Trainer:
                 self._save_samples(epoch, image_size)
                 self._save_checkpoint(epoch, global_step)
 
-            if self.scheduler is not None and global_step >= self.warmup_steps:
+            if self.scheduler is not None and self.scheduler_steps_per_call == "epoch":
                 self.scheduler.step()
 
         self._save_log()
@@ -149,8 +147,6 @@ class Trainer:
             checkpoint["ema_model_state_dict"] = self.ema_model.state_dict()
         if self.scheduler is not None:
             checkpoint["scheduler_state_dict"] = self.scheduler.state_dict()
-        if self.warmup_scheduler is not None:
-            checkpoint["warmup_scheduler_state_dict"] = self.warmup_scheduler.state_dict()
 
         torch.save(checkpoint, path)
         print(f"  Saved checkpoint to {path}")
