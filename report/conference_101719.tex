@@ -1,0 +1,368 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+% \usepackage{minted}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\begin{document}
+
+\title{Human Faces Generation with Diffusion Models\\
+}
+
+\author{
+\IEEEauthorblockN{Zain Abideen\textsuperscript{1},
+Hakan Demirer\textsuperscript{1},
+Matthew Osborne\textsuperscript{1},
+Kevin O'Shaughnessy\textsuperscript{1},
+Pranav Pokhrel\textsuperscript{1}}
+\IEEEauthorblockA{\textsuperscript{1}\textit{University of Surrey}\\
+}
+}
+
+
+\maketitle
+
+\begin{abstract}
+Generative modelling aims to learn complex data distributions in order to generate realistic samples. In this project, we implement a diffusion-based model for unconditional human face generation using the CelebA-HQ dataset. The model is based on the Denoising Diffusion Probabilistic Model framework, where a neural network is trained to reverse a gradual Gaussian noising process. Experiments were conducted using a restricted dataset of 2700 training images and 300 test images, with performance evaluated using the Fréchet Inception Distance. We systematically investigated the effects of image resolution, model capacity, training duration, learning rate, and stabilisation techniques. Results show that longer training substantially improves generation quality, but also introduces instability when no stabilisation is used. Exponential Moving Average improves robustness and sample quality, reducing FID from approximately 234 to 173 in an early controlled comparison, and enabling continued improvement over longer training. The best results were obtained by combining EMA with cosine learning rate scheduling, achieving a final FID of 41.82 after 600 epochs. Qualitative results also showed clearer facial structure, improved symmetry, and reduced artifacts. Overall, the project demonstrates that diffusion models can generate realistic human faces even under limited data and computational constraints, with training stability playing a key role in final performance.
+\end{abstract}
+
+
+
+\section{Introduction}
+Generative modelling aims to learn data distributions in order to generate realistic samples. In image generation, this involves producing images that are visually indistinguishable from real data, with applications in content creation and data augmentation.
+Human face generation is a challenging task due to complex structures and fine details, making it a strong benchmark for generative models. While Generative Adversarial Networks (GANs) \cite{b6} have achieved strong results, they often suffer from instability and mode collapse.
+Diffusion models provide a more stable alternative by learning to iteratively transform noise into structured images through a denoising process. This approach has achieved state-of-the-art performance across multiple domains \cite{b9}.
+In this work, we implement a diffusion-based model for human face generation using the CelebA-HQ dataset. We investigate the effects of architecture, resolution, training duration, and stabilization techniques such as Exponential Moving Average (EMA). Performance is evaluated using the Fréchet Inception Distance (FID), with significant improvements achieved through systematic experimentation.
+
+\section{Literature Review}
+Generative modeling aims to learn a probability distribution over high-dimensional data such that new samples can be drawn from it. Image synthesis has long served as a proving ground for generative methods, and for much of the last decade the dominant approach was Generative Adversarial Networks (GANs) \cite{b6}. GANs frame image generation as a two-player game between a generator that produces candidate samples from random noise and a discriminator that distinguishes them from real data.
+
+Despite producing visually impressive results, GANs are notoriously difficult to train: the adversarial objective is prone to instability, mode collapse reduces the diversity of generated samples, and convergence is sensitive to architectural and hyperparameter choices. These limitations motivated the search for generative models with more stable training dynamics and stronger likelihood-based foundations.
+
+Diffusion models provide such an alternative. The core idea, first proposed by Sohl-Dickstein et al. \cite{b4} and drawn from nonequilibrium thermodynamics, is to define a forward process that gradually corrupts data by adding Gaussian noise over many timesteps, and then to learn a reverse process that removes noise step by step, recovering samples from the data distribution.
+
+Ho et al. \cite{b3} made this framework practical with Denoising Diffusion Probabilistic Models (DDPMs), and this formulation of DDPM forms the basis of the model implemented in this project. Song et al. \cite{b2} unified discrete-time denoising diffusion with continuous-time score-based generative modeling under a single stochastic differential equation framework, showing that both approaches can be viewed as learning the score function of a data distribution perturbed by noise at varying scales. 
+
+Shortly afterwards, Dhariwal and Nichol \cite{b1} demonstrated empirically that diffusion models outperform GANs on standard image synthesis benchmarks across multiple resolutions, through a combination of architectural improvements, a learned reverse-process variance, and classifier-based guidance for conditional generation.
+
+Subsequent work has identified several refinements to the original DDPM formulation that improve sample quality at modest implementation cost. Nichol and Dhariwal \cite{b8} introduced a cosine noise schedule in which the cumulative signal-preservation factor decays as a shifted squared cosine. The cosine schedule destroys image information more gradually across timesteps, avoiding the rapid saturation observed at late timesteps under linear scheduling, and yields improved FID at equivalent training cost. 
+
+Independently from diffusion-specific schedule choices, cosine annealing of the learning rate \cite{b11} has become a standard optimization technique in deep learning. The method gradually decays the learning rate from its initial value following a cosine curve, providing high learning rates for early exploration and progressively reduced rates for late-stage refinement, which improves convergence in extended training runs.
+
+Dhariwal and Nichol \cite{b1} further demonstrated through systematic ablations that diffusion model architectures benefit from carefully tuned design choices including normalization placement, attention layer placement, and depth-width tradeoffs. The use of exponential moving averages of model parameters during sampling, while not introduced by any single paper, has become standard practice across the diffusion literature for stabilizing sample quality. 
+
+Progress in generative image modeling depends on standardized benchmarks and quantitative evaluation. For unconditional face generation, the CelebA-HQ dataset introduced by Karras et al. \cite{b7} has become a widely adopted benchmark, providing 30,000 high-quality face images and supporting evaluation across GANs, score-based approaches, and diffusion models. 
+
+To assess sample quality, the Fréchet Inception Distance (FID) proposed by Heusel et al. \cite{b5} has emerged as the standard metric. FID embeds both real and generated images into the feature space of a pretrained Inception-v3 network, fits a multivariate Gaussian to each set of features, and computes the Fréchet distance between the two Gaussians.
+
+
+\section{Methodology}
+
+\subsection{Diffusion Model Framework}
+
+This work is based on the Denoising Diffusion Probabilistic Model (DDPM) framework. Diffusion models consist of a forward process and a reverse process. The forward process gradually adds Gaussian noise to an image over a fixed number of timesteps until it becomes pure noise. The reverse process is learned by a neural network, which iteratively removes noise to reconstruct the original image.
+
+Formally, the model is trained to predict the noise component added to the image at each timestep. Given a noisy image $x_t$, the network learns to predict the noise $\epsilon$ that was added to the original image $x_0$. Starting from random noise, the learned reverse process enables generation of realistic images through successive denoising steps.
+
+\subsection{U-Net Architecture}
+
+The denoising model is implemented using a U-Net architecture, which is widely adopted in diffusion models due to its ability to capture both local and global image structure. The network follows an encoder-decoder design with skip connections between corresponding layers.
+
+The encoder progressively downsamples the input image using strided convolutions, increasing the number of feature channels at each stage. This allows the model to capture high-level semantic features. The decoder then upsamples the feature maps back to the original resolution using interpolation followed by convolution, reconstructing spatial details.
+
+Skip connections are used to transfer high-resolution feature information from the encoder to the decoder, improving reconstruction quality and stabilizing training.
+
+Each block in the network consists of convolutional layers followed by Group Normalization and a non-linear activation function. In addition, timestep conditioning is incorporated by embedding the diffusion timestep and injecting it into the network through feature-wise transformations. This allows the model to adapt its predictions based on the noise level at each timestep.
+
+The base number of channels is treated as a key hyperparameter controlling model capacity. Experiments were conducted with different configurations (32, 64, 96, and 128 channels) to evaluate its impact on performance.
+
+\subsection{Dataset and Preprocessing}
+
+Experiments were conducted on the CelebA-HQ dataset, restricted to 2700 training images and 300 test images as specified. Images were resized to the required resolution (64$\times$64 or 128$\times$128) and normalized to ensure stable training. No additional data augmentation was applied in order to maintain consistency across experiments.
+
+\subsection{Training Setup}
+
+Models were trained using the Adam optimizer with a learning rate of $2\times10^{-4}$ and a batch size of 1. The diffusion process was defined over 1000 timesteps.
+
+The training objective minimizes the mean squared error between the predicted noise and the true noise added during the forward process.
+
+Key variables explored include:
+
+\begin{itemize}
+
+  \item image resolution
+
+  \item model capacity (base channels)
+
+  \item number of training epochs
+
+  \item learning rate
+
+\end{itemize}
+
+\subsection{Stabilization Techniques}
+
+To improve training stability, Exponential Moving Average (EMA) was applied to model parameters, maintaining a smoothed version of the weights during training. EMA reduces the impact of noisy updates and improves sample quality during generation.
+
+Additionally, gradient clipping was used to limit large gradient updates and further stabilize training. A cosine learning rate scheduler was also explored in later experiments to improve convergence during extended training.
+
+\subsection{Evaluation Metric}
+
+Performance was evaluated using the Fréchet Inception Distance (FID), which measures the similarity between real and generated image distributions. FID computes the distance between feature distributions extracted from a pretrained Inception network. Lower FID indicates better sample quality and diversity.
+
+\section{Experiments}
+All experiments were conducted using a Denoising Diffusion Probabilistic Model (DDPM) trained on the CelebA-HQ dataset. In accordance with the coursework specification, the dataset was limited to 2700 training images and 300 test images. Model performance was evaluated using the Fréchet Inception Distance (FID), computed between 300 generated images and the test set.
+The baseline configuration was defined as:
+\begin{itemize}
+  \item Image resolution: 128 × 128,
+  \item Base channels: 64
+  \item Batch size: 1
+  \item Learning rate: 0.0002
+  \item Diffusion timesteps: 1000
+\end{itemize}
+
+Experiments were designed to systematically explore the impact of:
+
+\begin{enumerate}
+  \item Model capacity
+  \item Image resolution
+  \item Training duration
+  \item Learning rate
+  \item Training stabilization techniques
+\end{enumerate}
+
+\subsection{Baseline Performance}
+The baseline experiment (Experiment B) established a reference point using the default configuration. While it produced visually plausible face structures, the FID score remained relatively high, indicating limited sample quality and diversity.
+This baseline provided a foundation for subsequent improvements through architectural and training modifications.
+
+\subsection{Effect of Model Capacity}
+
+To evaluate the effect of model capacity, experiments were conducted with varying base channel sizes. At early training (20 epochs), both reducing and increasing model capacity relative to the baseline led to improved FID scores. Specifically, the smaller model (Experiment C, ch32) achieved a lower FID than the baseline, and the larger model (Experiment G, ch96) also improved upon the baseline. This suggests that model capacity alone does not directly determine early performance, and that optimization dynamics play a significant role during initial training.
+
+To further investigate the effect of model capacity at longer training durations, an additional experiment (Experiment L) was conducted using a reduced-capacity model (ch32) trained for 100 epochs. This configuration achieved an FID of 216.26, compared to 181.60 for the baseline configuration (ch64) at the same number of epochs (Experiment F100). This indicates that while lower-capacity models can perform competitively in early training, they do not scale as effectively with increased training duration.
+
+Subsequent experiments therefore focused on extending training primarily with the baseline configuration (ch64), where consistent and significant improvements were observed as training duration increased. This configuration ultimately led to the best-performing models in later stages.
+
+Overall, the results suggest that although different model capacities may yield comparable or improved performance in early training, the moderate configuration (ch64) provides a more reliable foundation for longer training and further optimization.
+
+\subsection{Effect of Image Resolution}
+
+The effect of image resolution was investigated by comparing 128$\times$128 and 64$\times$64 configurations. Lower resolution models (Experiment D) achieved a significantly lower FID score compared to the baseline. This improvement is expected, as generating lower-resolution images is an easier task, resulting in better quantitative performance. However, visual inspection revealed reduced detail and realism in generated faces. While lower resolution simplifies the learning problem, it limits the model’s ability to generate high-quality images.
+
+Overall, 128$\times$128 resolution provided better qualitative results and improved scalability, and was therefore retained for subsequent experiments.
+
+
+\subsection{Effect of Training Duration}
+
+Training duration was found to have a significant impact on model performance.
+
+For the baseline configuration without additional stabilisation techniques, increasing the number of epochs initially led to improvements in FID:
+\begin{itemize}
+    \item 100 epochs $\rightarrow$ FID $\approx$ 181
+    \item 150 epochs $\rightarrow$ FID $\approx$ 122
+    \item 200 epochs $\rightarrow$ FID $\approx$ 118
+\end{itemize}
+
+However, extending training further without stabilisation resulted in degradation:
+\begin{itemize}
+    \item 250 epochs $\rightarrow$ FID $\approx$ 159
+\end{itemize}
+
+This indicates that, in the absence of stabilisation, prolonged training can lead to instability and reduced sample quality.
+
+To address this, Exponential Moving Average (EMA) was introduced, which enabled stable training over longer durations. With EMA, performance improved consistently with increased training:
+\begin{itemize}
+    \item 200 epochs $\rightarrow$ FID $\approx$ 95
+    \item 250 epochs $\rightarrow$ FID $\approx$ 76
+    \item 300 epochs $\rightarrow$ FID $\approx$ 62
+\end{itemize}
+
+Further improvements were achieved by combining EMA with a cosine learning rate scheduler. Extending training up to 600 epochs resulted in the best performance:
+\begin{itemize}
+    \item 350 epochs $\rightarrow$ FID $\approx$ 46.7
+    \item 450 epochs $\rightarrow$ FID $\approx$ 42.6
+    \item 600 epochs $\rightarrow$ FID $\approx$ 41.8
+\end{itemize}
+
+While overall performance improved with longer training, results beyond 450 epochs exhibited some fluctuation, suggesting diminishing returns and minor instability in later stages.
+
+
+\subsection{Effect of Learning Rate}
+
+A lower learning rate (Experiment J, $1\times10^{-4}$) was also evaluated. While this configuration resulted in more gradual training, it led to slower convergence and inferior FID scores compared to the baseline learning rate of $2\times10^{-4}$. Therefore, $2\times10^{-4}$ was retained as the optimal learning rate, providing a better balance between convergence speed and stability.
+
+\subsection{EMA for Training Stabilization}
+
+To address instability in longer training runs, Exponential Moving Average (EMA) was introduced. EMA maintains a smoothed version of model parameters, reducing the impact of noisy updates during optimization.
+
+EMA was applied to the best-performing baseline configuration, which was used consistently across the F-series experiments.
+
+A controlled experiment was conducted to validate its effectiveness over 10 epochs:
+\begin{itemize}
+    \item Raw model $\rightarrow$ FID $\approx$ 234
+    \item EMA model $\rightarrow$ FID $\approx$ 173
+\end{itemize}
+
+This demonstrated a substantial improvement even in early training.
+
+EMA was then applied to longer training runs, producing significant and consistent gains:
+\begin{itemize}
+    \item 200 epochs (EMA) $\rightarrow$ FID $\approx$ 95
+    \item 250 epochs (EMA) $\rightarrow$ FID $\approx$ 76
+    \item 300 epochs (EMA) $\rightarrow$ FID $\approx$ 62
+\end{itemize}
+
+However, extending training further with EMA alone did not continue to improve performance:
+\begin{itemize}
+    \item 350 epochs (EMA) $\rightarrow$ FID $\approx$ 63.21
+\end{itemize}
+
+This indicates that while EMA stabilises training and prevents degradation, it does not fully address diminishing returns at later stages.
+
+
+\subsection{Effect of Cosine Learning Rate Scheduling}
+
+To further improve training stability and convergence in later stages, a cosine learning rate scheduler was introduced in combination with EMA.
+
+This modification enabled effective scaling to longer training durations and resulted in substantial improvements over EMA alone:
+\begin{itemize}
+    \item 350 epochs $\rightarrow$ FID $\approx$ 46.7
+    \item 450 epochs $\rightarrow$ FID $\approx$ 42.6
+    \item 600 epochs $\rightarrow$ FID $\approx$ 41.8
+\end{itemize}
+
+Compared to EMA-only training, the addition of cosine learning rate scheduling significantly improved performance, particularly in the later stages of training where improvements had previously plateaued.
+
+However, results beyond 450 epochs exhibited some fluctuations (e.g., increase at 500 epochs), indicating minor instability and diminishing returns despite the overall downward trend.
+
+\subsection{Effect of Cosine Noise Scheduling with Gradient Accumulation}
+
+The default batch size of 1 was selected due to memory constraints, as larger batches resulted in out-of-memory errors. To explore higher effective batch sizes, we implemented gradient accumulation following Ott et al. \cite{b10}, in which gradients are accumulated across multiple mini-batches before each optimizer update. Using a hardware batch size of 4 with 16 accumulation steps, we achieved an effective batch size of 64 while remaining within memory limits. A cosine noise schedule \cite{b8} was also evaluated to investigate whether changing the diffusion noising process could improve sample quality. Unlike cosine learning rate scheduling, which affects the optimizer, cosine noise scheduling changes how noise is added across diffusion timesteps. Combined with EMA, gradient accumulation and cosine noise scheduling produced strong results:
+
+\begin{itemize}
+    \item 100 epochs $\rightarrow$ FID $\approx$ 83
+    \item 200 epochs $\rightarrow$ FID $\approx$ 77
+\end{itemize}
+
+For comparison, EMA-only training without gradient accumulation reached FID 76.62 at 250 epochs (F250 EMA). The combined intervention reaches comparable FID at 50 fewer epochs, suggesting that larger effective batch sizes provide additional gradient stability that compounds with EMA's benefits
+
+\subsection{Qualitative Results}
+
+Generated samples show clear qualitative improvement as training progresses. Early models produce noisy and distorted faces, while later EMA-based models produce more coherent facial structure, improved symmetry, and fewer visible artifacts.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/f600_ema_coslr_grid.png}
+\caption{Generated samples from the best-performing model: F600 EMA with cosine learning rate scheduling.}
+\label{fig:f600_samples}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/progression_grid.png}
+\caption{Qualitative progression across experiments, showing improvement from early baseline outputs to the final EMA and cosine LR model.}
+\label{fig:progression}
+\end{figure}
+
+\subsection{Results Summary}
+Table\ref{tab:results} summarizes the most important experimental results.
+
+\begin{table*}[t]
+\centering
+\caption{Summary of Experimental Results}
+\small
+\begin{tabular}{lll}
+\hline
+\textbf{Experiment} & \textbf{Configuration} & \textbf{FID} \\
+\hline
+B & 128px, ch64, batch 1, 20 epochs & 309.14 \\
+C & 128px, ch32, batch 1, 20 epochs & 261.26 \\
+D & 64px, ch64, batch 1, 20 epochs & 216.12 \\
+E & 128px, ch64, batch 1, 50 epochs & 282.86 \\
+F100 & 128px, ch64, batch 1, 100 epochs & 181.60 \\
+F150 & 128px, ch64, 150 epochs & 122.23 \\
+F200 & 128px, ch64, 200 epochs & 118.30 \\
+F250 raw & 128px, ch64, 250 epochs & 159.40 \\
+F200 EMA & 128px, ch64, EMA, 200 epochs & 95.30 \\
+F250 EMA & 128px, ch64, EMA, 250 epochs & 76.62 \\
+F300 EMA & 128px, ch64, EMA, 300 epochs & 62.72 \\
+F350 EMA & 128px, ch64, EMA, 350 epochs & 63.21 \\
+F350 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 350 epochs & 45.02 \\
+F400 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 400 epochs & 44.65 \\
+F450 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 450 epochs & 42.64 \\
+F500 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 500 epochs & 45.92 \\
+F550 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 550 epochs & 43.90 \\
+F600 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 600 epochs & 41.82 \\
+G & 128px, ch96, batch 1, 20 epochs & 247.07 \\
+H & 128px, ch32, batch 1, 50 epochs & 209.64 \\
+I & 128px, ch96, batch 1, 50 epochs & 257.59 \\
+J100 & 128px, ch64, lr=1e-4, 100 epochs & 240.12 \\
+J250 & 128px, ch64, lr=1e-4, 250 epochs & 159.86 \\
+K & 128px, ch96, lr=1e-4, 20 epochs & 247.59 \\
+L & 128px, ch32, batch 1, 100 epochs & 216.26 \\
+EMA raw check & ch64, 10 epochs (no EMA) & 234.82 \\
+EMA check & ch64, 10 epochs (EMA) & 173.66 \\
+M (81K images) & 128$\times$128, ch128, batch 16, 100 epochs, warm-up & 41.31 \\
+N100 & 128px, ch64, EMA, batch 4 with 16 accumulation steps for effective batch 64, 100 epochs  & 83.35 \\
+N200 & 128px, ch64, EMA, batch 4 with 16 accumulation steps for effective batch 64, 200 epochs & 76.91 \\
+
+\hline
+\end{tabular}
+\label{tab:results}
+\end{table*}
+
+
+
+
+
+
+
+\section*{Conclusion}
+
+The project implemented and evaluated a diffusion-based approach for human face generation using the CelebA-HQ dataset. The model was trained under the DDPM framework, where image generation is achieved by learning to iteratively denoise random Gaussian noise into realistic face images. Across the experiments, performance was evaluated using the Fréchet Inception Distance (FID) and supported by qualitative inspection of generated samples.
+
+The results show that training duration has a major impact on sample quality. The baseline model improved substantially as training increased from 100 to 200 epochs, with FID decreasing from approximately 181 to 118. However, extending training to 250 epochs without additional stabilisation caused performance to degrade, increasing FID to around 159. This suggests that longer training alone is not sufficient, as the model can become unstable without techniques that smooth or regulate optimisation.
+
+Exponential Moving Average (EMA) was found to be an effective stabilisation method. EMA consistently improved sample quality compared to the raw model and allowed longer training runs to remain stable. With EMA, FID improved to approximately 95 at 200 epochs, 76 at 250 epochs, and 62 at 300 epochs. The strongest result under the restricted 2700-image training setup was achieved when EMA was combined with cosine learning rate scheduling. This configuration achieved an FID of 41.82 at 600 epochs, with visually clearer and more coherent generated faces.
+
+A further scale-up experiment highlights the impact of dataset size, batch size, and model capacity on generative performance. Training on a larger dataset of 81K images, using 128$\times$128 resolution, 128 base channels, batch size 16, and 100 epochs, achieved an FID of 41.31. However, this result is not directly comparable to those obtained under the restricted 2700-image setting, as multiple factors were changed simultaneously. Instead, it provides evidence that increasing dataset size and overall training scale can lead to improved generation quality, which is consistent with broader trends in generative modelling where larger datasets and higher-capacity models enable better approximation of the data distribution.
+
+Other experimental factors also influenced performance. Lower resolution images produced better FID scores in early experiments, but the generated samples lacked fine detail and realism. Therefore, 128$\times$128 resolution was retained as a better trade-off between quantitative performance and visual quality. Changes in model capacity showed that both smaller and larger models could improve early results, but the 64-channel configuration provided the most reliable foundation for extended training under the restricted dataset setting. A lower learning rate led to slower convergence and inferior results compared to the baseline learning rate of 0.0002.
+
+Despite these improvements, several limitations remain. Most experiments were conducted using only 2700 training images and a batch size of 1, which limited diversity, slowed training, and made optimisation noisier. Although the final models captured general facial structure, symmetry, and appearance, the generated images still do not fully match the fidelity of real samples. In addition, improvements beyond 450 epochs showed diminishing returns and some fluctuation, indicating that later-stage training remains difficult to stabilise.
+
+Future work could improve the model by training consistently on larger datasets, using larger batch sizes, and exploring more advanced diffusion architectures. Additional improvements could include learned variance, classifier-free guidance, or higher-resolution training. More efficient sampling methods could also be investigated to reduce generation time. Overall, the experiments demonstrate that diffusion models are effective for human face generation, and that both stabilisation techniques and training scale are essential for achieving strong performance.
+
+
+\section*{Code Availability}
+The project code and experiments are available at:
+\begin{center}
+\footnotesize
+\texttt{github.com/ezain701/human-face-generation-df-model}
+\end{center}
+
+\begin{thebibliography}{00}
+
+
+\bibitem{b1} P. Dhariwal and A. Nichol, ``Diffusion models beat GANs on image synthesis,'' in Advances in Neural Information Processing Systems, vol. 34, pp. 8780–8794, 2021.
+\bibitem{b2} Y. Song, J. Sohl-Dickstein, D. P. Kingma, A. Kumar, S. Ermon, and B. Poole, "Score-based generative modeling through stochastic differential equations," in Proceedings of the International Conference on Learning Representations (ICLR), 2021.
+\bibitem{b3} J. Ho, A. Jain, and P. Abbeel, "Denoising diffusion probabilistic models," in Advances in Neural Information Processing Systems, 2020.
+\bibitem{b4} J. Sohl-Dickstein, W. Eric, M. Niru, and G. Surya, "Deep Unsupervised Learning using Nonequilibrium Thermodynamics," in Proc. Int. Conf. Learn. Represent. (ICLR), 2015.
+\bibitem{b5} M. Heusel, H. Ramsauer, T. Unterthiner, B. Nessler, and S. Hochreiter, "GANs trained by a two time-scale update rule converge to a local Nash equilibrium," in Advances in Neural Information Processing Systems, vol. 30, pp. 6626–6637, 2017.
+\bibitem{b6} I. J. Goodfellow, J. Pouget-Abadie, M. Mirza, B. Xu, D. Warde-Farley, S. Ozair, A. Courville, and Y. Bengio, "Generative adversarial nets," in Advances in Neural Information Processing Systems, vol. 27, pp. 2672–2680, 2014.
+\bibitem{b7} T. Karras, T. Aila, S. Laine, and J. Lehtinen, "Progressive Growing of GANs for Improved Quality, Stability, and Variation," in Proc. Int. Conf. Learn. Represent. (ICLR), 2018.
+\bibitem{b8} A. Nichol and P. Dhariwal, "Improved Denoising Diffusion Probabilistic Models," in Proceedings of the International Conference on Machine Learning (ICML), pp. 8162–8171, 2021.
+\bibitem{b9} L. Yang, Z. Zhang, Y. Song, S. Hong, R. Xu, Y. Zhao, W. Zhang, B. Cui, and M.-H. Yang, "Diffusion models: A comprehensive survey of methods and applications," ACM Computing Surveys, vol. 56, no. 4, pp. 1–39, 2024.
+\bibitem{b10} M. Ott, S. Edunov, D. Grangier, and M. Auli, ``Scaling Neural Machine Translation,'' in Proc. 3rd Conf. Mach. Transl. (WMT), Brussels, Belgium, Oct. 2018, pp. 1--9.
+\bibitem{b11} I. Loshchilov and F. Hutter, ``SGDR: Stochastic Gradient Descent with Warm Restarts,'' in Proc. Int. Conf. Learn. Represent. (ICLR), 2017.
+
+\end{thebibliography}
+\vspace{12pt}
+
+\end{document}

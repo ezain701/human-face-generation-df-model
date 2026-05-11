@@ -1,0 +1,49 @@
+Using device: cuda
+Model parameters: 2,459,011
+Resuming from checkpoint: experiments/expC_faces_img128_bs1_ch32_ep20/checkpoints/model_epoch_20.pt
+ Resumed at epoch 20
+Dataset: celeba — 2700 images, 2700 batches/epoch
+Epoch 21 — Average Loss: 0.014052
+Epoch 22 — Average Loss: 0.013174
+Epoch 23 — Average Loss: 0.013047
+Epoch 24 — Average Loss: 0.012678
+Epoch 25 — Average Loss: 0.011943
+  Saved samples to logs/samples_epoch_25.png
+  Saved checkpoint to checkpoints/model_epoch_25.pt
+Epoch 26 — Average Loss: 0.012679
+Epoch 27 — Average Loss: 0.013100
+Epoch 28 — Average Loss: 0.013184
+Epoch 29 — Average Loss: 0.012596
+Epoch 30 — Average Loss: 0.013690
+  Saved samples to logs/samples_epoch_30.png
+  Saved checkpoint to checkpoints/model_epoch_30.pt
+Epoch 31 — Average Loss: 0.012141
+Epoch 32 — Average Loss: 0.013342
+Epoch 33 — Average Loss: 0.011221
+Epoch 34 — Average Loss: 0.012188
+Epoch 35 — Average Loss: 0.011317
+  Saved samples to logs/samples_epoch_35.png
+  Saved checkpoint to checkpoints/model_epoch_35.pt
+Epoch 36 — Average Loss: 0.012607
+Epoch 37 — Average Loss: 0.013963
+Epoch 38 — Average Loss: 0.012532
+Epoch 39 — Average Loss: 0.013536
+Epoch 40 — Average Loss: 0.010631
+  Saved samples to logs/samples_epoch_40.png
+  Saved checkpoint to checkpoints/model_epoch_40.pt
+Epoch 41 — Average Loss: 0.011992
+Epoch 42 — Average Loss: 0.011993
+Epoch 43 — Average Loss: 0.012356
+Epoch 44 — Average Loss: 0.012441
+Epoch 45 — Average Loss: 0.013232
+  Saved samples to logs/samples_epoch_45.png
+  Saved checkpoint to checkpoints/model_epoch_45.pt
+Epoch 46 — Average Loss: 0.012171
+Epoch 47 — Average Loss: 0.013802
+Epoch 48 — Average Loss: 0.013010
+Epoch 49 — Average Loss: 0.012624
+Epoch 50 — Average Loss: 0.011850
+  Saved samples to logs/samples_epoch_50.png
+  Saved checkpoint to checkpoints/model_epoch_50.pt
+Saved training log to logs/training_log.json
+Training complete.

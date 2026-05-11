@@ -19,24 +19,49 @@ class Trainer:
         schedule,
         dataloader,
         optimizer,
+        ema_model=None,
+        ema_decay=0.999,
+        clip_grad=None,
         device="cpu",
         checkpoint_dir="checkpoints",
         log_dir="logs",
+        scheduler=None,
     ):
         self.model = model.to(device)
         self.schedule = schedule
         self.dataloader = dataloader
         self.optimizer = optimizer
+        self.ema_model = ema_model.to(device) if ema_model is not None else None
+        self.ema_decay = ema_decay
         self.device = device
         self.checkpoint_dir = checkpoint_dir
         self.log_dir = log_dir
+        self.clip_grad = clip_grad
+        self.scheduler=scheduler
 
         os.makedirs(checkpoint_dir, exist_ok=True)
         os.makedirs(log_dir, exist_ok=True)
 
         self.training_log = []
 
-    def train(self, num_epochs, sample_every=10, image_size=256, start_epoch=0, warmup_steps=5000):
+    @torch.no_grad()
+    def _update_ema(self):
+        if self.ema_model is None:
+            return
+
+        ema_params = dict(self.ema_model.named_parameters())
+        model_params = dict(self.model.named_parameters())
+
+        for name, param in model_params.items():
+            ema_params[name].mul_(self.ema_decay).add_(param.data, alpha=1.0 - self.ema_decay)
+
+        ema_buffers = dict(self.ema_model.named_buffers())
+        model_buffers = dict(self.model.named_buffers())
+
+        for name, buf in model_buffers.items():
+            ema_buffers[name].copy_(buf)
+
+    def train(self, num_epochs, sample_every=10, image_size=256, start_epoch=0):
         """
         Main training loop.
 
@@ -45,18 +70,8 @@ class Trainer:
             sample_every: Generate sample images every N epochs.
             image_size: Resolution of generated samples.
             start_epoch: Epoch to resume from (0 = start fresh).
-            warmup_steps: Number of steps for learning rate warmup.
         """
         self.model.train()
-        
-        # Set up linear warmup scheduler
-        def lr_lambda(current_step: int):
-            if current_step < warmup_steps:
-                return float(current_step) / float(max(1, warmup_steps))
-            return 1.0
-        
-        scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
-        global_step = start_epoch * len(self.dataloader)  # Estimate starting step if resuming
 
         for epoch in range(start_epoch + 1, num_epochs + 1):
             epoch_loss = 0.0
@@ -73,31 +88,40 @@ class Trainer:
 
                 self.optimizer.zero_grad()
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+
+                if self.clip_grad is not None:
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_grad)
+
                 self.optimizer.step()
-                scheduler.step()
+                self._update_ema()
 
                 epoch_loss += loss.item()
                 num_batches += 1
-                global_step += 1
                 progress.set_postfix(
                     loss=loss.item(), 
                     lr=self.optimizer.param_groups[0]['lr']
                 )
 
             avg_loss = epoch_loss / num_batches
-            self.training_log.append({"epoch": epoch, "avg_loss": avg_loss})
-            print(f"Epoch {epoch} — Average Loss: {avg_loss:.6f}")
+
+            current_lr = self.optimizer.param_groups[0]["lr"]
+            self.training_log.append({"epoch": epoch, "avg_loss": avg_loss, "lr": current_lr})
+            print(f"Epoch {epoch} — Average Loss: {avg_loss:.6f} — LR: {current_lr:.8f}")
+
 
             if epoch % sample_every == 0:
                 self._save_samples(epoch, image_size)
                 self._save_checkpoint(epoch)
 
+            if self.scheduler is not None:
+                self.scheduler.step()
+
         self._save_log()
 
     def _save_samples(self, epoch, image_size, num_samples=4):
-        self.model.eval()
-        samples = generate_samples(self.schedule, self.model, num_samples, image_size)
+        sample_model = self.ema_model if self.ema_model is not None else self.model
+        sample_model.eval()
+        samples = generate_samples(self.schedule, sample_model, num_samples, image_size)
         self.model.train()
         path = os.path.join(self.log_dir, f"samples_epoch_{epoch}.png")
         save_image(samples, path, nrow=2)
@@ -105,11 +129,18 @@ class Trainer:
 
     def _save_checkpoint(self, epoch):
         path = os.path.join(self.checkpoint_dir, f"model_epoch_{epoch}.pt")
-        torch.save({
+        checkpoint = {
             "epoch": epoch,
             "model_state_dict": self.model.state_dict(),
             "optimizer_state_dict": self.optimizer.state_dict(),
-        }, path)
+        }
+
+        if self.ema_model is not None:
+            checkpoint["ema_model_state_dict"] = self.ema_model.state_dict()
+        if self.scheduler is not None:
+            checkpoint["scheduler_state_dict"] = self.scheduler.state_dict()
+
+        torch.save(checkpoint, path)
         print(f"  Saved checkpoint to {path}")
 
     def _save_log(self):

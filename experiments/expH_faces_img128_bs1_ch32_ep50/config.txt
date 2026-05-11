@@ -1,0 +1,11 @@
+run_name=expH_faces_img128_bs1_ch32_ep50
+dataset=celeba_hq_256
+epochs=50
+batch_size=1
+image_size=128
+base_channels=32
+lr=0.0002
+sample_every=5
+train_split=2700
+test_split=300
+resume=experiments/expC_faces_img128_bs1_ch32_ep20/checkpoints/model_epoch_20.pt

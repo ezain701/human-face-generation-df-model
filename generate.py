@@ -4,6 +4,7 @@ Generate images from a trained checkpoint and optionally compute FID.
 Usage:
     python generate.py --checkpoint checkpoints/model_epoch_100.pt --num_images 300
     python generate.py --checkpoint checkpoints/model_epoch_100.pt --num_images 300 --compute_fid --data_dir data/celeba_hq_256
+    python generate.py --checkpoint checkpoints/model_epoch_100.pt --num_images 300 --use_ema
 """
 
 import argparse
@@ -28,6 +29,7 @@ def parse_args():
     parser.add_argument("--output_dir", type=str, default="generated")
     parser.add_argument("--compute_fid", action="store_true", help="Compute FID against real images")
     parser.add_argument("--data_dir", type=str, default="data/celeba_hq_256", help="Real images dir (for FID)")
+    parser.add_argument("--use_ema", action="store_true", help="Use EMA weights for generation if available")
     return parser.parse_args()
 
 
@@ -43,9 +45,17 @@ def main():
     model = UNet(base_channels=args.base_channels).to(device)
 
     ckpt = torch.load(args.checkpoint, map_location=device)
-    model.load_state_dict(ckpt["model_state_dict"])
+
+    if args.use_ema and "ema_model_state_dict" in ckpt:
+        model.load_state_dict(ckpt["ema_model_state_dict"])
+        print(f"Loaded EMA weights from checkpoint: {args.checkpoint} (epoch {ckpt.get('epoch', '?')})")
+    else:
+        model.load_state_dict(ckpt["model_state_dict"])
+        if args.use_ema:
+            print("EMA requested but no EMA weights found in checkpoint; using raw model weights")
+        print(f"Loaded checkpoint: {args.checkpoint} (epoch {ckpt.get('epoch', '?')})")
+
     model.eval()
-    print(f"Loaded checkpoint: {args.checkpoint} (epoch {ckpt.get('epoch', '?')})")
 
     # --- Generate images in batches ---
     all_images = []

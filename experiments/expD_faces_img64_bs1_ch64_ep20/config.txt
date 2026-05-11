@@ -1,0 +1,10 @@
+run_name=expD_faces_img64_bs1_ch64_ep20
+dataset=celeba_hq_256
+epochs=20
+batch_size=1
+image_size=64
+base_channels=64
+sample_every=2
+train_split=2700
+test_split=300
+resume=no

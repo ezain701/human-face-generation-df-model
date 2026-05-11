@@ -23,16 +23,35 @@ class UNet(nn.Module):
 
     def __init__(
         self,
-        in_channels=3,
+        # in_channels is the number of channels in the input image.
+        in_channels=3,  
+        # out_channels is the same as in_channels for image generation tasks 
+        # because we're predicting noise of the same shape as the input image.      
         out_channels=3,
-        base_channels=128,
+        # base_channels controls the width of the UNet model. 
+        # Higher values = more parameters = better quality but slower training/inference.        
+        base_channels=64,
+        # Each entry in channel_mults multiplies the base_channels for that level of the UNet.
         channel_mults=(1, 2, 2, 2),
+        # num_res_blocks controls how many residual blocks are in each level of the UNet.
         num_res_blocks=2,
+        # attention_resolutions specifies which levels of the UNet should have self-attention.
         attention_resolutions=(2,),
+        # time_emb_dim controls the dimensionality of the time embedding used in the residual blocks.
         time_emb_dim=256,
+        # num_heads controls the number of attention heads in the self-attention layers.
         num_heads=4,
     ):
         super().__init__()
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.base_channels = base_channels
+        self.channel_mults = channel_mults
+        self.num_res_blocks = num_res_blocks
+        self.attention_resolutions = attention_resolutions
+        self.time_emb_dim = time_emb_dim
+        self.num_heads = num_heads
 
         self.time_mlp = nn.Sequential(
             SinusoidalPositionEmbedding(base_channels),
