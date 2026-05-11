@@ -51,6 +51,8 @@ Ho et al. \cite{b3} made this framework practical with Denoising Diffusion Proba
 
 Shortly afterwards, Dhariwal and Nichol \cite{b1} demonstrated empirically that diffusion models outperform GANs on standard image synthesis benchmarks across multiple resolutions, through a combination of architectural improvements, a learned reverse-process variance, and classifier-based guidance for conditional generation.
 
+Prompt conditioning extends diffusion models from unconditional sampling to user-controllable generation. Classifier-free guidance, introduced by Ho and Salimans \cite{b12}, trains a conditional model with occasional conditioning dropout so that both conditional and unconditional predictions can be combined at sampling time. This allows a guidance scale to control how strongly the generated image follows the prompt without requiring a separate classifier. In text-to-image systems, CLIP-style text encoders \cite{b13} are commonly used to convert natural-language prompts into semantic embeddings, and latent diffusion models \cite{b14} demonstrated the effectiveness of combining text conditioning with diffusion-based image synthesis.
+
 Subsequent work has identified several refinements to the original DDPM formulation that improve sample quality at modest implementation cost. Nichol and Dhariwal \cite{b8} introduced a cosine noise schedule in which the cumulative signal-preservation factor decays as a shifted squared cosine. The cosine schedule destroys image information more gradually across timesteps, avoiding the rapid saturation observed at late timesteps under linear scheduling, and yields improved FID at equivalent training cost. 
 
 Independently from diffusion-specific schedule choices, cosine annealing of the learning rate \cite{b11} has become a standard optimization technique in deep learning. The method gradually decays the learning rate from its initial value following a cosine curve, providing high learning rates for early exploration and progressively reduced rates for late-stage refinement, which improves convergence in extended training runs.
@@ -81,6 +83,12 @@ Skip connections are used to transfer high-resolution feature information from t
 Each block in the network consists of convolutional layers followed by Group Normalization and a non-linear activation function. In addition, timestep conditioning is incorporated by embedding the diffusion timestep and injecting it into the network through feature-wise transformations. This allows the model to adapt its predictions based on the noise level at each timestep.
 
 The base number of channels is treated as a key hyperparameter controlling model capacity. Experiments were conducted with different configurations (32, 64, 96, and 128 channels) to evaluate its impact on performance.
+
+\subsection{Prompt Conditioning (extra-credit)} 
+
+In addition to unconditional face generation, a prompt-conditioned variant was implemented to allow the generated face attributes to be influenced by natural-language descriptions. Captions were associated with training images using CelebA-style facial attributes, for example descriptions of hair colour, age, expression, accessories, and other visible facial properties. During training, these captions were encoded into text embeddings using either a lightweight trainable text encoder or a frozen CLIP text encoder \cite{b13}. The text embedding was then injected into the U-Net together with the diffusion timestep embedding, allowing the denoising network to learn a relationship between the noisy image, the noise level, and the requested semantic attributes.
+
+To support prompt control at generation time, classifier-free guidance was approximated by randomly dropping captions during training and by combining conditional and unconditional noise predictions during sampling \cite{b12}. A higher guidance scale increases adherence to the prompt, while a lower scale gives the model more freedom and can reduce artifacts when the prompt-conditioned model is undertrained. In practice, prompt conditioning increased the difficulty of the task compared with unconditional face generation, especially under the restricted 2700-image training setting, but it provided a practical route for generating faces with requested attributes such as hair colour, glasses, hats, or smiling expressions.
 
 \subsection{Dataset and Preprocessing}
 
@@ -309,8 +317,10 @@ L & 128px, ch32, batch 1, 100 epochs & 216.26 \\
 EMA raw check & ch64, 10 epochs (no EMA) & 234.82 \\
 EMA check & ch64, 10 epochs (EMA) & 173.66 \\
 M (81K images) & 128$\times$128, ch128, batch 16, 100 epochs, warm-up & 41.31 \\
+O100 (expO) & CelebA-HQ-256, 128px, ch128, EMA, batch 4 with 16 accumulation steps for effective batch 64, 100 epochs & 64.91 \\
 N100 & 128px, ch64, EMA, batch 4 with 16 accumulation steps for effective batch 64, 100 epochs  & 83.35 \\
 N200 & 128px, ch64, EMA, batch 4 with 16 accumulation steps for effective batch 64, 200 epochs & 76.91 \\
+R100 (reconstructed) & CelebA, 64px, ch128, batch 16, 100 epochs & 16.71 \\
 
 \hline
 \end{tabular}
@@ -354,6 +364,9 @@ Future work could improve the model by training consistently on larger datasets,
 \bibitem{b9} L. Yang, Z. Zhang, Y. Song, S. Hong, R. Xu, Y. Zhao, W. Zhang, B. Cui, and M.-H. Yang, "Diffusion models: A comprehensive survey of methods and applications," ACM Computing Surveys, vol. 56, no. 4, pp. 1–39, 2024.
 \bibitem{b10} M. Ott, S. Edunov, D. Grangier, and M. Auli, ``Scaling Neural Machine Translation,'' in Proc. 3rd Conf. Mach. Transl. (WMT), Brussels, Belgium, Oct. 2018, pp. 1--9.
 \bibitem{b11} I. Loshchilov and F. Hutter, ``SGDR: Stochastic Gradient Descent with Warm Restarts,'' in Proc. Int. Conf. Learn. Represent. (ICLR), 2017.
+\bibitem{b12} J. Ho and T. Salimans, ``Classifier-Free Diffusion Guidance,'' in NeurIPS Workshop on Deep Generative Models and Downstream Applications, 2021.
+\bibitem{b13} A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, J. Clark, G. Krueger, and I. Sutskever, ``Learning Transferable Visual Models From Natural Language Supervision,'' in Proc. Int. Conf. Mach. Learn. (ICML), pp. 8748--8763, 2021.
+\bibitem{b14} R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Ommer, ``High-Resolution Image Synthesis With Latent Diffusion Models,'' in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), pp. 10684--10695, 2022.
 
 \end{thebibliography}
 \vspace{12pt}

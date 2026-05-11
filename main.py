@@ -22,13 +22,13 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Train a DDPM diffusion model")
     parser.add_argument("--dataset", type=str, default="celeba", choices=["celeba", "butterfly"])
     parser.add_argument("--data_dir", type=str, default="/scratch/pmoney/img_align_celeba")
-    parser.add_argument("--image_size", type=int, default=192)
-    parser.add_argument("--train_size", type=int, default=27000, help="Number of CelebA training images to use")
+    parser.add_argument("--image_size", type=int, default=128)
+    parser.add_argument("--train_size", type=int, default=2700, help="Number of CelebA training images to use")
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--timesteps", type=int, default=1000)
-    parser.add_argument("--base_channels", type=int, default=64)
+    parser.add_argument("--base_channels", type=int, default=128)
     parser.add_argument("--text_conditioning", action="store_true", help="Train the model with prompt conditioning")
     parser.add_argument("--caption_file", type=str, default=None, help="Optional captions file keyed by image filename")
     parser.add_argument("--default_caption", type=str, default=None, help="Fallback prompt when an image has no caption")
@@ -51,11 +51,22 @@ def parse_args():
     parser.add_argument(
         "--augment_level",
         type=str,
-        default="face_safe",
+        default="basic",
         choices=["none", "basic", "face_safe", "strong"],
         help="Image augmentation strength. face_safe is recommended for aligned faces.",
     )
     parser.add_argument("--sample_every", type=int, default=10)
+    parser.add_argument(
+        "--denoising_steps",
+        type=int,
+        default=8,
+        help="Number of reverse-diffusion snapshots to save in denoising_epoch_*.png",
+    )
+    parser.add_argument(
+        "--no_denoising_viz",
+        action="store_true",
+        help="Disable saving denoising_epoch_*.png at sample checkpoints",
+    )
     parser.add_argument("--checkpoint_dir", type=str, default="checkpoints")
     parser.add_argument("--log_dir", type=str, default="logs")
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint to resume from")
@@ -270,6 +281,8 @@ def main():
         use_amp=args.use_amp,
         sample_prompts=sample_prompts,
         guidance_scale=args.sample_guidance_scale,
+        save_denoising_viz=not args.no_denoising_viz,
+        denoising_steps=args.denoising_steps,
         schedule=schedule,
         dataloader=dataloader,
         optimizer=optimizer,

@@ -30,6 +30,8 @@ class Trainer:
         use_amp=False,
         sample_prompts=None,
         guidance_scale=3.0,
+        save_denoising_viz=True,
+        denoising_steps=8,
         clip_grad=None,
         device="cpu",
         checkpoint_dir="checkpoints",
@@ -51,6 +53,8 @@ class Trainer:
         self.use_amp = use_amp and device == "cuda"
         self.sample_prompts = sample_prompts or []
         self.guidance_scale = guidance_scale
+        self.save_denoising_viz = save_denoising_viz
+        self.denoising_steps = denoising_steps
         self.device = device
         self.checkpoint_dir = checkpoint_dir
         self.log_dir = log_dir
@@ -183,15 +187,50 @@ class Trainer:
             text_emb = self._encode_prompts_for_sampling([""] * num_samples)
         samples = generate_samples(self.schedule, sample_model, num_samples, image_size, text_emb=text_emb)
         self.text_encoder = previous_text_encoder
-        self.model.train()
-        if self.text_encoder is not None:
-            self.text_encoder.train()
         path = os.path.join(self.log_dir, f"samples_epoch_{epoch}.png")
         save_image(samples, path, nrow=2)
         print(f"  Saved samples to {path}")
 
+        if self.save_denoising_viz:
+            self._save_denoising_visualization(epoch, image_size, sample_model, sample_text_encoder)
+
         if self.sample_prompts and self.tokenizer is not None and sample_text_encoder is not None:
             self._save_prompt_samples(epoch, image_size, sample_model, sample_text_encoder)
+
+        self.model.train()
+        if self.text_encoder is not None:
+            self.text_encoder.train()
+
+    def _save_denoising_visualization(self, epoch, image_size, sample_model, sample_text_encoder):
+        previous_text_encoder = self.text_encoder
+        self.text_encoder = sample_text_encoder
+
+        text_emb = None
+        uncond_text_emb = None
+        guidance_scale = 1.0
+        if self.tokenizer is not None and sample_text_encoder is not None:
+            prompt = self.sample_prompts[0] if self.sample_prompts else ""
+            text_emb = self._encode_prompts_for_sampling([prompt])
+            if prompt:
+                uncond_text_emb = self._encode_prompts_for_sampling([""])
+                guidance_scale = self.guidance_scale
+
+        _, denoising_images = generate_samples(
+            self.schedule,
+            sample_model,
+            1,
+            image_size,
+            text_emb=text_emb,
+            uncond_text_emb=uncond_text_emb,
+            guidance_scale=guidance_scale,
+            return_intermediates=True,
+            num_intermediate_steps=self.denoising_steps,
+        )
+        self.text_encoder = previous_text_encoder
+
+        path = os.path.join(self.log_dir, f"denoising_epoch_{epoch}.png")
+        save_image(denoising_images, path, nrow=denoising_images.shape[0])
+        print(f"  Saved denoising visualization to {path}")
 
     def _save_prompt_samples(self, epoch, image_size, sample_model, sample_text_encoder):
         previous_text_encoder = self.text_encoder

@@ -1,0 +1,8 @@
+{
+  "checkpoint": "checkpoints/model_epoch_120.pt",
+  "prompt": "a portrait photo of a smiling person with eyeglasses",
+  "seed": 1950330597,
+  "text_conditioning": true,
+  "guidance_scale": 3.0,
+  "note": "Prompt conditions generation only when text_conditioning is true and the checkpoint includes text encoder weights."
+}
