@@ -1,4 +1,4 @@
-run_name=exp81k_faces_img128_bs16_ch128_ep100
+run_name=expP_81k_warmup_faces_img128_bs16_ch128_ep100
 dataset=celeba
 data_dir=data/img_align_celeba
 dataset_size=90000

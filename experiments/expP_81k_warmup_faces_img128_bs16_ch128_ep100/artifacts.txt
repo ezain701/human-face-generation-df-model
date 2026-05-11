@@ -1,6 +1,6 @@
 checkpoint=checkpoints/model_epoch_100.pt
 sample_logs=logs/samples_epoch_*.png
-training_log=exp81k_faces_img128_bs16_ch128_ep100/training_log.json
+training_log=expP_81k_warmup_faces_img128_bs16_ch128_ep100/training_log.json
 generated_images=generated/fid41/
 generated_grid=generated/fid41/grid_sample.png
 source_metadata=data/last_trained_model.json
