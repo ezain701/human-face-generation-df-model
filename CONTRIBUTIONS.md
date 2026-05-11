@@ -49,7 +49,13 @@ with cosine LR while addressing scheduler interaction, resume-state handling, an
 
 | Kevin O'Shaughnessy | 
 
-Once our DDPM pipeline was created, I added unit tests to it to help me understand how the code works at a low level. I started a 100 epoch training run on 29th March. At this stage we were generating 256x256 images and the process took around 24 hours. We subsequently agreed 128x128 would be our default. I recommended the Latex conference template for our report. Then I researched the literature, wrote the literature review, and understood that although we already had a good recreation of the Ho et al. paper there were many subsequent innovations to help us improve our accuracy. I implemented several of these, including cosine noise scheduler and accumulated gradients. Some changes such as Kernel Inception Distance were agreed to be discarded to focus on the core work and reduce the report length, but were useful for learning. Involved in general report editing and reviewed several PRs. |
+* Shortly after our DDPM pipeline was created, I added many unit tests to validate component behaviour and better understand the code at a low level. 
+* Initiated 100 epoch training run on 29th March. At this stage we were generating 256x256 images and the process took around 24 hours. We subsequently agreed 128x128 would be our default. 
+* Recommended the Latex conference template for our report and created the outline with main sections are pointers for teammates. 
+* Deeply researched the literature including GAN, FID, and DDPM papers, wrote the literature review, understanding that although we already had a good recreation of the Ho et al. paper there were many subsequent innovations to help us improve our accuracy.
+* Identified and implemented several post-DDPM improvements not present in the initial pipeline: cosine noise scheduling, gradient accumulation for larger effective batch sizes, DDIM sampling for accelerated image generation, and Kernel Inception Distance (KID) as a complement to FID. Some features, at the time of writing, are not merged due to a desire to focus on the core work and reduce the report length, but were used sucessfully in some training runs.
+* Investigated training instabilities including degenerate sample generation (near-black and near-white outputs), tracing the root cause to AdaGN scale parameter drift and identifying initialisation corrections.
+* Reviewed pull requests and contributed to report editing and revision.
 
 | Matthew Osborne | 
 
