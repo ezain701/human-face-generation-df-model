@@ -23,6 +23,7 @@ def parse_args():
     parser.add_argument("--image_size", type=int, default=256)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--batch_size", type=int, default=16)
+    parser.add_argument("--accum_steps", type=int, default=1, help="number of batches to accumulate gradients before optimizer step")
     parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--timesteps", type=int, default=1000)
     parser.add_argument("--base_channels", type=int, default=128)
@@ -45,6 +46,8 @@ def parse_args():
     parser.add_argument("--use_ema", action="store_true", help="Enable EMA model")
     parser.add_argument("--ema_decay", type=float, default=0.999, help="EMA decay factor")
 
+    parser.add_argument("--noise_scheduler", type=str, default="linear", choices=["linear", "cosine"], help="Noise schedule type")
+
     return parser.parse_args()
 
 
@@ -54,7 +57,9 @@ def main():
     print(f"Using device: {device}")
 
     # --- Noise schedule ---
-    schedule = NoiseSchedule(num_timesteps=args.timesteps, device=device)
+    print(f"Noise scheduler: {args.noise_scheduler}")
+    schedule = NoiseSchedule(num_timesteps=args.timesteps, schedule=args.noise_scheduler, device=device)
+
 
     # --- Model ---
     model = UNet(base_channels=args.base_channels).to(device)
@@ -155,6 +160,7 @@ def main():
         sample_every=args.sample_every,
         image_size=args.image_size,
         start_epoch=start_epoch,
+        accum_steps=args.accum_steps
     )
 
     print("Training complete.")
