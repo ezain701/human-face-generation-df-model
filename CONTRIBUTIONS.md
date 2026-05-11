@@ -59,4 +59,6 @@ with cosine LR while addressing scheduler interaction, resume-state handling, an
 
 | Matthew Osborne | 
 
-Worked on cosine scheduling components, including cosine learning-rate scheduling and cosine noise scheduling experiments. Also contributed to the shared code design process, project integration, experimentation, result analysis, and report writing. |
+- Developed and implented the cosine scheduling aspects of the model this includes; the development of cosine learning-rate scheduling and cosine noise scheduling experiments.
+- In addition to the aforementioned, I supported my above collaborators in the shared code design, project integration, experiments and associated results and analysis.
+- Supported collation of the report. |
