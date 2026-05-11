@@ -23,6 +23,7 @@ def parse_args():
     parser.add_argument("--image_size", type=int, default=256)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--batch_size", type=int, default=16)
+    parser.add_argument("--accum_steps", type=int, default=1, help="number of batches to accumulate gradients before optimizer step")
     parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--timesteps", type=int, default=1000)
     parser.add_argument("--base_channels", type=int, default=128)
@@ -55,6 +56,7 @@ def main():
 
     # --- Noise schedule ---
     schedule = NoiseSchedule(num_timesteps=args.timesteps, device=device)
+    schedule = NoiseSchedule(num_timesteps=args.timesteps, schedule=args.noise_scheduler, device=device)
 
     # --- Model ---
     model = UNet(base_channels=args.base_channels).to(device)
@@ -155,6 +157,7 @@ def main():
         sample_every=args.sample_every,
         image_size=args.image_size,
         start_epoch=start_epoch,
+        accum_steps=args.accum_steps
     )
 
     print("Training complete.")

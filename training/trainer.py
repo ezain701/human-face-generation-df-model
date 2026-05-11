@@ -61,7 +61,7 @@ class Trainer:
         for name, buf in model_buffers.items():
             ema_buffers[name].copy_(buf)
 
-    def train(self, num_epochs, sample_every=10, image_size=256, start_epoch=0):
+    def train(self, num_epochs, sample_every=10, image_size=256, start_epoch=0, accum_steps=1):
         """
         Main training loop.
 
@@ -70,6 +70,9 @@ class Trainer:
             sample_every: Generate sample images every N epochs.
             image_size: Resolution of generated samples.
             start_epoch: Epoch to resume from (0 = start fresh).
+            accum_steps: Number of batches to accumulate gradients over
+                         before each optimizer step. Effective batch size
+                         becomes dataloader_batch_size * accum_steps.
         """
         self.model.train()
 
@@ -78,7 +81,7 @@ class Trainer:
             num_batches = 0
 
             progress = tqdm(self.dataloader, desc=f"Epoch {epoch}/{num_epochs}")
-            for batch in progress:
+            for i, batch in enumerate(progress):
                 batch = batch.to(self.device)
                 t = torch.randint(
                     0, self.schedule.num_timesteps, (batch.shape[0],), device=self.device
@@ -86,21 +89,34 @@ class Trainer:
 
                 loss = p_losses(self.schedule, self.model, batch, t)
 
-                self.optimizer.zero_grad()
-                loss.backward()
+                # Scale loss so the accumulated gradient matches the mean
+                # over the effective batch, not the sum.
+                # The optimizer will see the same magnitude it would from a single large batch
+                (loss / accum_steps).backward()
 
-                if self.clip_grad is not None:
-                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_grad)
-
-                self.optimizer.step()
-                self._update_ema()
+                # Step only every accum_steps micro-batches
+                if (i + 1) % accum_steps == 0:
+                    if self.clip_grad is not None:
+                        torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_grad)
+                    self.optimizer.step()
+                    self.optimizer.zero_grad()
+                    self._update_ema()  # EMA updates with the optimizer, not every micro-batch
 
                 epoch_loss += loss.item()
                 num_batches += 1
                 progress.set_postfix(loss=loss.item())
 
-            avg_loss = epoch_loss / num_batches
-            
+            # Handle leftover micro-batches at end of epoch (if dataset size
+            # isn't divisible by accum_steps). 
+            # Otherwise their gradients get discarded at the next zero_grad().
+            if (i + 1) % accum_steps != 0:
+                if self.clip_grad is not None:
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_grad)
+                self.optimizer.step()
+                self.optimizer.zero_grad()
+                self._update_ema()
+
+            avg_loss = epoch_loss / num_batches           
             current_lr = self.optimizer.param_groups[0]["lr"]
             self.training_log.append({"epoch": epoch, "avg_loss": avg_loss, "lr": current_lr})
             print(f"Epoch {epoch} — Average Loss: {avg_loss:.6f} — LR: {current_lr:.8f}")
