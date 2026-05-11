@@ -38,7 +38,7 @@ This project was developed collaboratively by all five group members. The overal
 - Implemented and extended major components of the DDPM training pipeline, including EMA integration, cosine learning rate scheduling, checkpoint resume logic, experiment management infrastructure, and evaluation workflows.
 - Designed, coordinated, and ran the majority of large-scale experiments, including long-duration EMA + cosine LR training runs up to 600 epochs, model-capacity studies, cosine noise schedule experiments, gradient accumulation experiments, and reduced-resolution evaluations.
 - Led experiment tracking, checkpoint management, sample generation, FID benchmarking, and qualitative evaluation figure creation, including progression grids across experiments.
-Reviewed and validated all major code changes, pull requests, and commits throughout the project to ensure training stability,reproducibility, experiment consistency, and to prevent unstable or incorrect code from being merged into the main branch.
+- Reviewed and validated all major code changes, pull requests, and commits throughout the project to ensure training stability,reproducibility, experiment consistency, and to prevent unstable or incorrect code from being merged into the main branch.
 - Helped Matthew implement cosine learning rate scheduling and assisted Hakan in integrating warmup scheduling together
 with cosine LR while addressing scheduler interaction, resume-state handling, and optimizer consistency issues.
 - Investigated training stability issues related to schedulers, EMA integration, resume logic, and optimizer state restoration across multiple training configurations.
