@@ -78,6 +78,19 @@ def main():
 
     # --- Optimizer ---
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+
+    # --- Warmup scheduler (per-batch) ---
+    warmup_scheduler = None
+    warmup_steps = args.warmup_steps if args.warmup_steps is not None else 0
+    if warmup_steps > 0:
+        def warmup_lr_lambda(current_step: int):
+            if current_step < warmup_steps:
+                return float(current_step + 1) / float(max(1, warmup_steps))
+            return 1.0
+        warmup_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, warmup_lr_lambda)
+        print(f"Warmup enabled: {warmup_steps} steps")
+
+    # --- Cosine scheduler (per-epoch, kicks in after warmup) ---
     scheduler = None
     if args.use_scheduler:
         t_max = args.scheduler_tmax if args.scheduler_tmax is not None else args.epochs
@@ -113,6 +126,13 @@ def main():
             print("  Loaded scheduler state from checkpoint")
         elif scheduler is not None:
             print("  No scheduler state found in checkpoint; scheduler will start fresh")
+
+        # Load warmup scheduler state if available
+        if warmup_scheduler is not None and "warmup_scheduler_state_dict" in ckpt:
+            warmup_scheduler.load_state_dict(ckpt["warmup_scheduler_state_dict"])
+            print("  Loaded warmup scheduler state from checkpoint")
+        elif warmup_scheduler is not None:
+            print("  No warmup scheduler state found in checkpoint; warmup will start fresh")
 
         # Optionally reset LR from CLI after resume
         if args.reset_lr_on_resume:
@@ -156,6 +176,8 @@ def main():
         checkpoint_dir=args.checkpoint_dir,
         log_dir=args.log_dir,
         scheduler=scheduler,
+        warmup_scheduler=warmup_scheduler,
+        warmup_steps=warmup_steps,
     )
     trainer.train(
         num_epochs=args.epochs,

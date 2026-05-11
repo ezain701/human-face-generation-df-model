@@ -26,6 +26,8 @@ class Trainer:
         checkpoint_dir="checkpoints",
         log_dir="logs",
         scheduler=None,
+        warmup_scheduler=None,
+        warmup_steps=0,
     ):
         self.model = model.to(device)
         self.schedule = schedule
@@ -37,7 +39,9 @@ class Trainer:
         self.checkpoint_dir = checkpoint_dir
         self.log_dir = log_dir
         self.clip_grad = clip_grad
-        self.scheduler=scheduler
+        self.scheduler = scheduler
+        self.warmup_scheduler = warmup_scheduler
+        self.warmup_steps = warmup_steps
 
         os.makedirs(checkpoint_dir, exist_ok=True)
         os.makedirs(log_dir, exist_ok=True)
@@ -72,6 +76,7 @@ class Trainer:
             start_epoch: Epoch to resume from (0 = start fresh).
         """
         self.model.train()
+        global_step = start_epoch * len(self.dataloader)
 
         for epoch in range(start_epoch + 1, num_epochs + 1):
             epoch_loss = 0.0
@@ -95,10 +100,14 @@ class Trainer:
                 self.optimizer.step()
                 self._update_ema()
 
+                if self.warmup_scheduler is not None and global_step < self.warmup_steps:
+                    self.warmup_scheduler.step()
+
                 epoch_loss += loss.item()
                 num_batches += 1
+                global_step += 1
                 progress.set_postfix(
-                    loss=loss.item(), 
+                    loss=loss.item(),
                     lr=self.optimizer.param_groups[0]['lr']
                 )
 
@@ -108,12 +117,11 @@ class Trainer:
             self.training_log.append({"epoch": epoch, "avg_loss": avg_loss, "lr": current_lr})
             print(f"Epoch {epoch} — Average Loss: {avg_loss:.6f} — LR: {current_lr:.8f}")
 
-
             if epoch % sample_every == 0:
                 self._save_samples(epoch, image_size)
-                self._save_checkpoint(epoch)
+                self._save_checkpoint(epoch, global_step)
 
-            if self.scheduler is not None:
+            if self.scheduler is not None and global_step >= self.warmup_steps:
                 self.scheduler.step()
 
         self._save_log()
@@ -127,7 +135,7 @@ class Trainer:
         save_image(samples, path, nrow=2)
         print(f"  Saved samples to {path}")
 
-    def _save_checkpoint(self, epoch):
+    def _save_checkpoint(self, epoch, global_step=None):
         path = os.path.join(self.checkpoint_dir, f"model_epoch_{epoch}.pt")
         checkpoint = {
             "epoch": epoch,
@@ -135,10 +143,14 @@ class Trainer:
             "optimizer_state_dict": self.optimizer.state_dict(),
         }
 
+        if global_step is not None:
+            checkpoint["global_step"] = global_step
         if self.ema_model is not None:
             checkpoint["ema_model_state_dict"] = self.ema_model.state_dict()
         if self.scheduler is not None:
             checkpoint["scheduler_state_dict"] = self.scheduler.state_dict()
+        if self.warmup_scheduler is not None:
+            checkpoint["warmup_scheduler_state_dict"] = self.warmup_scheduler.state_dict()
 
         torch.save(checkpoint, path)
         print(f"  Saved checkpoint to {path}")
