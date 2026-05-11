@@ -35,6 +35,7 @@ This project was developed collaboratively by all five group members. The overal
 
 | Zain Ul Abideen | 
 
+- Implemented the initial end-to-end DDPM training pipeline and created the foundational project structure, establishing the baseline codebase and integration flow that the later experiments, stabilisation techniques, and architectural improvements were built upon.
 - Implemented and extended major components of the DDPM training pipeline, including EMA integration, cosine learning rate scheduling, checkpoint resume logic, experiment management infrastructure, and evaluation workflows.
 - Designed, coordinated, and ran the majority of large-scale experiments, including long-duration EMA + cosine LR training runs up to 600 epochs, model-capacity studies, cosine noise schedule experiments, gradient accumulation experiments, and reduced-resolution evaluations.
 - Led experiment tracking, checkpoint management, sample generation, FID benchmarking, and qualitative evaluation figure creation, including progression grids across experiments.
