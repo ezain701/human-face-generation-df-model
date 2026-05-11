@@ -28,6 +28,8 @@ def parse_args():
     parser.add_argument("--batch_size", type=int, default=16, help="Batch size for generation")
     parser.add_argument("--output_dir", type=str, default="generated")
     parser.add_argument("--compute_fid", action="store_true", help="Compute FID against real images")
+    parser.add_argument("--noise_schedule", type=str, default="linear", choices=["linear", "cosine"], help="Noise schedule (must match training)")
+
     parser.add_argument("--data_dir", type=str, default="data/celeba_hq_256", help="Real images dir (for FID)")
     parser.add_argument("--use_ema", action="store_true", help="Use EMA weights for generation if available")
     return parser.parse_args()
@@ -41,7 +43,8 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
 
     # --- Load model ---
-    schedule = NoiseSchedule(num_timesteps=args.timesteps, device=device)
+    print(f"Using {args.noise_schedule} noise schedule with {args.timesteps} timesteps")
+    schedule = NoiseSchedule(num_timesteps=args.timesteps, schedule=args.noise_schedule, device=device)
     model = UNet(base_channels=args.base_channels).to(device)
 
     ckpt = torch.load(args.checkpoint, map_location=device)

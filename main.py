@@ -46,6 +46,8 @@ def parse_args():
     parser.add_argument("--use_ema", action="store_true", help="Enable EMA model")
     parser.add_argument("--ema_decay", type=float, default=0.999, help="EMA decay factor")
 
+    parser.add_argument("--noise_scheduler", type=str, default="linear", choices=["linear", "cosine"], help="Noise schedule type")
+
     return parser.parse_args()
 
 
@@ -55,8 +57,9 @@ def main():
     print(f"Using device: {device}")
 
     # --- Noise schedule ---
-    schedule = NoiseSchedule(num_timesteps=args.timesteps, device=device)
+    print(f"Noise scheduler: {args.noise_scheduler}")
     schedule = NoiseSchedule(num_timesteps=args.timesteps, schedule=args.noise_scheduler, device=device)
+
 
     # --- Model ---
     model = UNet(base_channels=args.base_channels).to(device)
