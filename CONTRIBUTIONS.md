@@ -17,8 +17,19 @@ This project was developed collaboratively by all five group members. The overal
 
 | Hakan Demirer | 
 
-Worked across the main training and generation pipeline, including data loading, model training workflow, checkpointing, sampling, and general integration, excluding the FID calculation and cosine scheduling components. Also contributed to experimentation, result analysis, and report writing. |
-
+- Built the initial diffusion model framework, including the project structure, training pipeline, generation scripts, and core model components.
+- Implemented the main training entry point (main.py) with argument parsing, device detection, model initialization, optimizer setup, checkpoint resume logic, and training orchestration.
+- Developed the Trainer class (training/trainer.py) with the complete training loop, checkpointing system,  sample generation during training, loss logging, and progress tracking.
+- Created the generation script (generate.py) for producing images from trained checkpoints with configurable parameters.
+- Implemented data loading infrastructure (data/dataset.py) including CelebA-HQ and Butterfly dataset classes with preprocessing, normalization, and dataloader creation.
+- Implemented the noise scheduling module (models/noise_schedule.py) with beta schedule computation and cumulative alpha calculations.
+- Set up the project structure with proper Python packaging, dependencies (requirements.txt), and .gitignore configuration.
+- Scaled up the dataset handling to support larger training runs (81,000 images) with updated preprocessing including CenterCrop transformation.
+- Implemented learning rate warmup scheduling feature with configurable warmup steps parameter.
+- Ran the 81K-image warmup experiment achieving FID score of 41.31, demonstrating the effectiveness of warmup on larger datasets.
+- Integrated warmup scheduling with the existing scheduler infrastructure, ensuring proper checkpoint state management and resume behavior.
+- Addressed code review feedback throughout the project, including scheduler conflict resolution.
+- Contributed to experimentation, result analysis, and report writing. | 
 
 | Zain Ul Abideen | 
 
