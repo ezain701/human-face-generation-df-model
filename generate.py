@@ -4,7 +4,6 @@ Generate images from a trained checkpoint and optionally compute FID.
 Usage:
     python generate.py --checkpoint checkpoints/model_epoch_100.pt --num_images 300
     python generate.py --checkpoint checkpoints/model_epoch_100.pt --num_images 300 --compute_fid --data_dir data/celeba_hq_256
-    python generate.py --checkpoint checkpoints/model_epoch_100.pt --num_images 300 --use_ema
 """
 
 import argparse
@@ -14,7 +13,7 @@ from torchvision.utils import save_image
 
 from models.unet import UNet
 from models.noise_schedule import NoiseSchedule
-from models.reverse_diffusion import sample as generate_samples
+from models.reverse_diffusion import sample as ddpm_sample
 from evaluation.fid import compute_fid_score
 
 
@@ -28,8 +27,7 @@ def parse_args():
     parser.add_argument("--batch_size", type=int, default=16, help="Batch size for generation")
     parser.add_argument("--output_dir", type=str, default="generated")
     parser.add_argument("--compute_fid", action="store_true", help="Compute FID against real images")
-    parser.add_argument("--data_dir", type=str, default="data/celeba_hq_256", help="Real images dir (for FID)")
-    parser.add_argument("--use_ema", action="store_true", help="Use EMA weights for generation if available")
+    parser.add_argument("--data_dir", type=str, default="data/celeba_hq_256", help="Real images dir (for FID)")    
     return parser.parse_args()
 
 
@@ -45,17 +43,9 @@ def main():
     model = UNet(base_channels=args.base_channels).to(device)
 
     ckpt = torch.load(args.checkpoint, map_location=device)
-
-    if args.use_ema and "ema_model_state_dict" in ckpt:
-        model.load_state_dict(ckpt["ema_model_state_dict"])
-        print(f"Loaded EMA weights from checkpoint: {args.checkpoint} (epoch {ckpt.get('epoch', '?')})")
-    else:
-        model.load_state_dict(ckpt["model_state_dict"])
-        if args.use_ema:
-            print("EMA requested but no EMA weights found in checkpoint; using raw model weights")
-        print(f"Loaded checkpoint: {args.checkpoint} (epoch {ckpt.get('epoch', '?')})")
-
+    model.load_state_dict(ckpt["model_state_dict"])
     model.eval()
+    print(f"Loaded checkpoint: {args.checkpoint} (epoch {ckpt.get('epoch', '?')})")
 
     # --- Generate images in batches ---
     all_images = []
@@ -64,7 +54,7 @@ def main():
     while remaining > 0:
         batch_n = min(args.batch_size, remaining)
         print(f"Generating batch of {batch_n} images ({args.num_images - remaining + batch_n}/{args.num_images})...")
-        images = generate_samples(schedule, model, batch_n, args.image_size)
+        images = ddpm_sample(schedule, model, batch_n, args.image_size)
         all_images.append(images.cpu())
         remaining -= batch_n
 
