@@ -45,19 +45,22 @@ Generative modeling aims to learn a probability distribution over high-dimension
 
 Despite producing visually impressive results, GANs are notoriously difficult to train: the adversarial objective is prone to instability, mode collapse reduces the diversity of generated samples, and convergence is sensitive to architectural and hyperparameter choices. These limitations motivated the search for generative models with more stable training dynamics and stronger likelihood-based foundations.
 
-Diffusion models provide such an alternative. The core idea, first proposed by Sohl-Dickstein et al. [4] and drawn from nonequilibrium thermodynamics, is to define a forward process that gradually corrupts data by adding Gaussian noise over many timesteps, and then to learn a reverse process that removes noise step by step, recovering samples from the data distribution.
+Diffusion models provide such an alternative. The core idea, first proposed by Sohl-Dickstein et al. \cite{b4} and drawn from nonequilibrium thermodynamics, is to define a forward process that gradually corrupts data by adding Gaussian noise over many timesteps, and then to learn a reverse process that removes noise step by step, recovering samples from the data distribution.
 
-Ho et al. [3] made this framework practical with Denoising Diffusion Probabilistic Models (DDPMs), and this formulation of DDPM forms the basis of the model implemented in this project. Song et al. [2] unified discrete-time denoising diffusion with continuous-time score-based generative modeling under a single stochastic differential equation framework, showing that both approaches can be viewed as learning the score function of a data distribution perturbed by noise at varying scales. 
+Ho et al. \cite{b3} made this framework practical with Denoising Diffusion Probabilistic Models (DDPMs), and this formulation of DDPM forms the basis of the model implemented in this project. Song et al. \cite{b2} unified discrete-time denoising diffusion with continuous-time score-based generative modeling under a single stochastic differential equation framework, showing that both approaches can be viewed as learning the score function of a data distribution perturbed by noise at varying scales. 
 
-Shortly afterwards, Dhariwal and Nichol [1] demonstrated empirically that diffusion models outperform GANs on standard image synthesis benchmarks across multiple resolutions, through a combination of architectural improvements, a learned reverse-process variance, and classifier-based guidance for conditional generation.
+Shortly afterwards, Dhariwal and Nichol \cite{b1} demonstrated empirically that diffusion models outperform GANs on standard image synthesis benchmarks across multiple resolutions, through a combination of architectural improvements, a learned reverse-process variance, and classifier-based guidance for conditional generation.
 
-Subsequent work has identified several refinements to the original DDPM formulation that improve sample quality at modest implementation cost. Nichol and Dhariwal [8] introduced a cosine noise schedule in which the cumulative signal-preservation factor decays as a shifted squared cosine. The cosine schedule destroys image information more gradually across timesteps, avoiding the rapid saturation observed at late timesteps under linear scheduling, and yields improved FID at equivalent training cost. 
+Subsequent work has identified several refinements to the original DDPM formulation that improve sample quality at modest implementation cost. Nichol and Dhariwal \cite{b8} introduced a cosine noise schedule in which the cumulative signal-preservation factor decays as a shifted squared cosine. The cosine schedule destroys image information more gradually across timesteps, avoiding the rapid saturation observed at late timesteps under linear scheduling, and yields improved FID at equivalent training cost. 
 
-Dhariwal and Nichol [1] further showed that adaptive group normalization — in which the affine parameters of group normalization are predicted from the timestep embedding rather than learned as constants — provides a stronger form of timestep conditioning than the additive injection used in the original DDPM. The use of exponential moving averages of model parameters during sampling, while not introduced by any single paper, has become standard practice across the diffusion literature for stabilizing sample quality. 
+Independently from diffusion-specific schedule choices, cosine annealing of the learning rate \cite{b11} has become a standard optimization technique in deep learning. The method gradually decays the learning rate from its initial value following a cosine curve, providing high learning rates for early exploration and progressively reduced rates for late-stage refinement, which improves convergence in extended training runs.
 
-Progress in generative image modeling depends on standardized benchmarks and quantitative evaluation. For unconditional face generation, the CelebA-HQ dataset introduced by Karras et al. [7] has become a widely adopted benchmark, providing 30,000 high-quality face images and supporting evaluation across GANs, score-based approaches, and diffusion models. 
+Dhariwal and Nichol \cite{b1} further demonstrated through systematic ablations that diffusion model architectures benefit from carefully tuned design choices including normalization placement, attention layer placement, and depth-width tradeoffs. The use of exponential moving averages of model parameters during sampling, while not introduced by any single paper, has become standard practice across the diffusion literature for stabilizing sample quality. 
 
-To assess sample quality, the Fréchet Inception Distance (FID) proposed by Heusel et al. [5] has emerged as the standard metric. FID embeds both real and generated images into the feature space of a pretrained Inception-v3 network, fits a multivariate Gaussian to each set of features, and computes the Fréchet distance between the two Gaussians. 
+Progress in generative image modeling depends on standardized benchmarks and quantitative evaluation. For unconditional face generation, the CelebA-HQ dataset introduced by Karras et al. \cite{b7} has become a widely adopted benchmark, providing 30,000 high-quality face images and supporting evaluation across GANs, score-based approaches, and diffusion models. 
+
+To assess sample quality, the Fréchet Inception Distance (FID) proposed by Heusel et al. \cite{b5} has emerged as the standard metric. FID embeds both real and generated images into the feature space of a pretrained Inception-v3 network, fits a multivariate Gaussian to each set of features, and computes the Fréchet distance between the two Gaussians.
+
 
 \section{Methodology}
 
@@ -238,13 +241,16 @@ Compared to EMA-only training, the addition of cosine learning rate scheduling s
 
 However, results beyond 450 epochs exhibited some fluctuations (e.g., increase at 500 epochs), indicating minor instability and diminishing returns despite the overall downward trend.
 
-\subsection{Effect of Cosine Noise Scheduling}
+\subsection{Effect of Cosine Noise Scheduling with Gradient Accumulation}
 
-A cosine noise schedule was also evaluated to investigate whether changing the diffusion noising process could improve sample quality. Unlike cosine learning rate scheduling, which affects the optimizer, cosine noise scheduling changes how noise is added across diffusion timesteps.
+The default batch size of 1 was selected due to memory constraints, as larger batches resulted in out-of-memory errors. To explore higher effective batch sizes, we implemented gradient accumulation following Ott et al. \cite{b10}, in which gradients are accumulated across multiple mini-batches before each optimizer update. Using a hardware batch size of 4 with 16 accumulation steps, we achieved an effective batch size of 64 while remaining within memory limits. A cosine noise schedule \cite{b8} was also evaluated to investigate whether changing the diffusion noising process could improve sample quality. Unlike cosine learning rate scheduling, which affects the optimizer, cosine noise scheduling changes how noise is added across diffusion timesteps. Combined with EMA, gradient accumulation and cosine noise scheduling produced strong results:
 
-The experiment used the same EMA-based configuration as the F-series baseline, with 128$\times$128 resolution, 64 base channels, batch size 1, and 300 epochs. However, replacing the standard linear noise schedule with a cosine noise schedule resulted in a significantly worse FID score of 314.
+\begin{itemize}
+    \item 100 epochs $\rightarrow$ FID $\approx$ 83
+    \item 200 epochs $\rightarrow$ FID $\approx$ 77
+\end{itemize}
 
-This indicates that the cosine noise schedule was not effective in the current implementation. The result suggests that the diffusion noise schedule is highly sensitive, and that the original linear schedule was more stable for this setup.
+For comparison, EMA-only training without gradient accumulation reached FID 76.62 at 250 epochs (F250 EMA). The combined intervention reaches comparable FID at 50 fewer epochs, suggesting that larger effective batch sizes provide additional gradient stability that compounds with EMA's benefits
 
 \subsection{Qualitative Results}
 
@@ -293,7 +299,6 @@ F450 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 450 epochs & 42.64 \\
 F500 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 500 epochs & 45.92 \\
 F550 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 550 epochs & 43.90 \\
 F600 EMA + cosine LR & 128px, ch64, EMA, cosine LR, 600 epochs & 41.82 \\
-F300 EMA + cosine noise & 128px, ch64, EMA, cosine noise & 314.10 \\
 G & 128px, ch96, batch 1, 20 epochs & 247.07 \\
 H & 128px, ch32, batch 1, 50 epochs & 209.64 \\
 I & 128px, ch96, batch 1, 50 epochs & 257.59 \\
@@ -304,6 +309,9 @@ L & 128px, ch32, batch 1, 100 epochs & 216.26 \\
 EMA raw check & ch64, 10 epochs (no EMA) & 234.82 \\
 EMA check & ch64, 10 epochs (EMA) & 173.66 \\
 M (81K images) & 128$\times$128, ch128, batch 16, 100 epochs, warm-up & 41.31 \\
+N100 & 128px, ch64, EMA, batch 4 with 16 accumulation steps for effective batch 64, 100 epochs  & 83.35 \\
+N200 & 128px, ch64, EMA, batch 4 with 16 accumulation steps for effective batch 64, 200 epochs & 76.91 \\
+
 \hline
 \end{tabular}
 \label{tab:results}
@@ -344,6 +352,8 @@ Future work could improve the model by training consistently on larger datasets,
 \bibitem{b7} T. Karras, T. Aila, S. Laine, and J. Lehtinen, "Progressive Growing of GANs for Improved Quality, Stability, and Variation," in Proc. Int. Conf. Learn. Represent. (ICLR), 2018.
 \bibitem{b8} A. Nichol and P. Dhariwal, "Improved Denoising Diffusion Probabilistic Models," in Proceedings of the International Conference on Machine Learning (ICML), pp. 8162–8171, 2021.
 \bibitem{b9} L. Yang, Z. Zhang, Y. Song, S. Hong, R. Xu, Y. Zhao, W. Zhang, B. Cui, and M.-H. Yang, "Diffusion models: A comprehensive survey of methods and applications," ACM Computing Surveys, vol. 56, no. 4, pp. 1–39, 2024.
+\bibitem{b10} M. Ott, S. Edunov, D. Grangier, and M. Auli, ``Scaling Neural Machine Translation,'' in Proc. 3rd Conf. Mach. Transl. (WMT), Brussels, Belgium, Oct. 2018, pp. 1--9.
+\bibitem{b11} I. Loshchilov and F. Hutter, ``SGDR: Stochastic Gradient Descent with Warm Restarts,'' in Proc. Int. Conf. Learn. Represent. (ICLR), 2017.
 
 \end{thebibliography}
 \vspace{12pt}
