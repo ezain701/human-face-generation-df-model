@@ -5,6 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Human Face Generation with Diffusion Models</title>
     <style>
+      .section-subtitle {
+        text-align: center;
+
+        color: #666;
+
+        margin-bottom: 2rem;
+      }
+
+      .metrics-grid {
+        display: grid;
+
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+
+        gap: 1rem;
+
+        margin-bottom: 2rem;
+      }
+
+      .metric-card {
+        background: #ffffff;
+
+        border: 1px solid #e5e7eb;
+
+        border-radius: 12px;
+
+        padding: 1.5rem;
+
+        text-align: center;
+
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+
+      .metric-icon {
+        font-size: 2rem;
+
+        display: block;
+
+        margin-bottom: 0.5rem;
+      }
+
+      .metric-card h3 {
+        margin: 0.5rem 0;
+
+        font-size: 1rem;
+      }
+
+      .metric-value {
+        font-size: 1.6rem;
+
+        font-weight: 700;
+
+        color: #2563eb;
+
+        margin: 0;
+      }
+
+      .highlights-card {
+        background: #f8fafc;
+
+        border-left: 4px solid #2563eb;
+
+        padding: 1.5rem;
+
+        border-radius: 10px;
+      }
+
+      .highlights-card h3 {
+        margin-top: 0;
+      }
+
+      .highlights-card ul {
+        margin-bottom: 0;
+      }
+
+      .highlights-card li {
+        margin-bottom: 0.6rem;
+      }
+
       :root {
         --ink: #1d252c;
         --muted: #65717b;
@@ -1065,129 +1143,76 @@
         </div>
       </section>
 
-      <section id="usage">
-        <div class="section-head">
-          <h2>Usage</h2>
-          <p class="lede">
-            The command-line workflow is centered on <code>main.py</code> for
-            training and <code>generate.py</code> for sampling, reproducibility
-            metadata, and FID evaluation.
-          </p>
+      <section id="conclusion">
+        <h2>Project Highlights</h2>
+
+        <p class="section-subtitle">
+          A diffusion-based face generation project exploring training
+          stability, architecture design, and large-scale experimentation.
+        </p>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="metric-icon">🏆</span>
+
+            <h3>Best FID</h3>
+
+            <p class="metric-value">41.82</p>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-icon">⏱️</span>
+
+            <h3>Training</h3>
+
+            <p class="metric-value">600 Epochs</p>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-icon">🖼️</span>
+
+            <h3>Resolution</h3>
+
+            <p class="metric-value">128 × 128</p>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-icon">🚀</span>
+
+            <h3>Best Setup</h3>
+
+            <p class="metric-value">EMA + Cosine LR</p>
+          </div>
         </div>
 
-        <div class="commands">
-          <div class="command">
-            <h3>Install dependencies</h3>
-            <pre>pip install -r requirements.txt</pre>
-          </div>
-          <div class="command">
-            <h3>Train a CelebA face model</h3>
-            <pre>python main.py --data_dir data/celeba_hq_256 --epochs 100</pre>
-          </div>
-          <div class="command">
-            <h3>Train with EMA and cosine LR scheduling</h3>
-            <pre>
-python main.py \
-  --data_dir data/celeba_hq_256 \
-  --image_size 128 \
-  --base_channels 64 \
-  --epochs 600 \
-  --use_ema \
-  --use_scheduler</pre
-            >
-          </div>
-          <div class="command">
-            <h3>Generate samples from a checkpoint</h3>
-            <pre>
-python generate.py \
-  --checkpoint checkpoints/model_epoch_100.pt \
-  --num_images 300 \
-  --use_ema</pre
-            >
-          </div>
-          <div class="command">
-            <h3>Prompt-conditioned generation</h3>
-            <pre>
-python generate.py \
-  --checkpoint checkpoints/model_epoch_100.pt \
-  --text_conditioning \
-  --prompt "studio portrait, soft light, smiling" \
-  --guidance_scale 3.0</pre
-            >
-          </div>
-        </div>
-      </section>
+        <div class="highlights-card">
+          <h3>Key Outcomes</h3>
 
-      <section id="files">
-        <div class="section-head">
-          <h2>File Map</h2>
-          <p class="lede">
-            The codebase is compact and organized around data loading, model
-            components, training, generation, evaluation, experiments, and
-            report artifacts.
-          </p>
-        </div>
+          <ul>
+            <li>
+              Built a complete DDPM face generation pipeline from scratch.
+            </li>
 
-        <div class="files">
-          <div class="file-row">
-            <strong><code>main.py</code></strong>
-            <p>
-              Training entry point. Parses CLI arguments, builds the schedule,
-              U-Net, optional text encoders, EMA model, optimizer, scheduler,
-              datasets, and trainer.
-            </p>
-          </div>
-          <div class="file-row">
-            <strong><code>generate.py</code></strong>
-            <p>
-              Loads checkpoints, supports prompt-derived seeds, runs reverse
-              diffusion, saves PNGs and grids, and optionally computes FID.
-            </p>
-          </div>
-          <div class="file-row">
-            <strong><code>models/</code></strong>
-            <p>
-              Core DDPM implementation: U-Net, residual and attention blocks,
-              forward diffusion, reverse diffusion, text encoders, and noise
-              schedule.
-            </p>
-          </div>
-          <div class="file-row">
-            <strong><code>data/</code></strong>
-            <p>
-              Dataset classes for CelebA-HQ and butterfly images, image
-              transforms, caption loading, and DataLoader construction.
-            </p>
-          </div>
-          <div class="file-row">
-            <strong><code>training/trainer.py</code></strong>
-            <p>
-              Training loop with random timestep sampling, MSE noise prediction
-              loss, checkpointing, EMA updates, and sample generation during
-              training.
-            </p>
-          </div>
-          <div class="file-row">
-            <strong><code>evaluation/</code></strong>
-            <p>
-              FID scoring and visualization utilities for image grids, loss
-              curves, and diffusion process inspection.
-            </p>
-          </div>
-          <div class="file-row">
-            <strong><code>experiments/</code></strong>
-            <p>
-              Saved experiment configurations, logs, FID outputs, checkpoints
-              folders, and generated samples from many training runs.
-            </p>
-          </div>
-          <div class="file-row">
-            <strong><code>report/</code></strong>
-            <p>
-              IEEE conference LaTeX report files and figures documenting the
-              project.
-            </p>
-          </div>
+            <li>
+              Ran extensive experiments across architecture and training
+              configurations.
+            </li>
+
+            <li>
+              Validated EMA and cosine LR as major contributors to training
+              stability.
+            </li>
+
+            <li>
+              Achieved realistic face synthesis under limited-data coursework
+              constraints.
+            </li>
+
+            <li>
+              Maintained a collaborative GitHub workflow with code reviews, PRs,
+              and experiment tracking.
+            </li>
+          </ul>
         </div>
       </section>
 
