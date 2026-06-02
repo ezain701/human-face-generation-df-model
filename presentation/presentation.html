@@ -1,0 +1,1260 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Human Face Generation with Diffusion Models</title>
+    <style>
+      .section-subtitle {
+        text-align: center;
+
+        color: #666;
+
+        margin-bottom: 2rem;
+      }
+
+      .metrics-grid {
+        display: grid;
+
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+
+        gap: 1rem;
+
+        margin-bottom: 2rem;
+      }
+
+      .metric-card {
+        background: #ffffff;
+
+        border: 1px solid #e5e7eb;
+
+        border-radius: 12px;
+
+        padding: 1.5rem;
+
+        text-align: center;
+
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+
+      .metric-icon {
+        font-size: 2rem;
+
+        display: block;
+
+        margin-bottom: 0.5rem;
+      }
+
+      .metric-card h3 {
+        margin: 0.5rem 0;
+
+        font-size: 1rem;
+      }
+
+      .metric-value {
+        font-size: 1.6rem;
+
+        font-weight: 700;
+
+        color: #2563eb;
+
+        margin: 0;
+      }
+
+      .highlights-card {
+        background: #f8fafc;
+
+        border-left: 4px solid #2563eb;
+
+        padding: 1.5rem;
+
+        border-radius: 10px;
+      }
+
+      .highlights-card h3 {
+        margin-top: 0;
+      }
+
+      .highlights-card ul {
+        margin-bottom: 0;
+      }
+
+      .highlights-card li {
+        margin-bottom: 0.6rem;
+      }
+
+      :root {
+        --ink: #1d252c;
+        --muted: #65717b;
+        --line: #d9e0e6;
+        --panel: #ffffff;
+        --paper: #f5f7f3;
+        --green: #2f6b4f;
+        --teal: #1d6872;
+        --gold: #b07a22;
+        --red: #a54740;
+        --code: #13232f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--paper);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.6;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .shell {
+        width: min(1180px, calc(100% - 40px));
+        margin: 0 auto;
+      }
+
+      header {
+        min-height: 88vh;
+        display: grid;
+        align-items: end;
+        color: #f8fbf9;
+        background:
+          linear-gradient(
+            90deg,
+            rgba(10, 19, 24, 0.88),
+            rgba(10, 19, 24, 0.58),
+            rgba(10, 19, 24, 0.18)
+          ),
+          url("experiments/expF600_ema_coslr_faces_img128_bs1_ch64_ep600/generated_ema/grid_sample.png")
+            center / cover;
+        border-bottom: 1px solid #cbd5d7;
+      }
+
+      .hero {
+        padding: 36px 0 72px;
+        max-width: 820px;
+      }
+
+      .eyebrow {
+        margin: 0 0 14px;
+        color: #cce5dd;
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2.7rem, 7vw, 6.8rem);
+        line-height: 0.95;
+        letter-spacing: 0;
+      }
+
+      .hero p {
+        max-width: 680px;
+        margin: 24px 0 0;
+        color: #e7f0ed;
+        font-size: 1.15rem;
+      }
+
+      .quick-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 28px;
+      }
+
+      .quick-nav a {
+        padding: 9px 13px;
+        border: 1px solid rgba(255, 255, 255, 0.36);
+        border-radius: 6px;
+        color: #f8fbf9;
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(8px);
+        font-size: 0.92rem;
+        font-weight: 700;
+      }
+
+      main {
+        padding: 42px 0 72px;
+      }
+
+      section {
+        padding: 44px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      section:last-child {
+        border-bottom: 0;
+      }
+
+      .section-head {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        gap: 36px;
+        align-items: start;
+        margin-bottom: 26px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 1.75rem;
+        line-height: 1.2;
+        letter-spacing: 0;
+      }
+
+      .lede {
+        margin: 0;
+        color: var(--muted);
+        font-size: 1.02rem;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .metric,
+      .card,
+      .step,
+      .file-row,
+      .command,
+      .result-row {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: 0 10px 24px rgba(26, 36, 42, 0.04);
+      }
+
+      .metric {
+        padding: 18px;
+        min-height: 126px;
+      }
+
+      .metric strong {
+        display: block;
+        color: var(--green);
+        font-size: 2rem;
+        line-height: 1;
+      }
+
+      .metric span {
+        display: block;
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .card {
+        padding: 22px;
+      }
+
+      h3 {
+        margin: 0 0 10px;
+        font-size: 1.1rem;
+        line-height: 1.25;
+      }
+
+      .card p,
+      .step p,
+      .file-row p,
+      .result-row p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .pipeline {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .step {
+        position: relative;
+        padding: 20px;
+        min-height: 178px;
+      }
+
+      .step-number {
+        display: inline-grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        margin-bottom: 16px;
+        border-radius: 50%;
+        color: #fff;
+        background: var(--teal);
+        font-weight: 800;
+      }
+
+      .files {
+        display: grid;
+        gap: 10px;
+      }
+
+      .file-row {
+        display: grid;
+        grid-template-columns: 230px 1fr;
+        gap: 18px;
+        padding: 16px 18px;
+        align-items: start;
+      }
+
+      code,
+      pre {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      }
+
+      code {
+        color: var(--code);
+        background: #e7ece7;
+        border-radius: 4px;
+        padding: 2px 5px;
+        font-size: 0.9em;
+      }
+
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        color: #e7f1ef;
+        background: var(--code);
+        border-radius: 8px;
+        padding: 16px;
+        overflow: auto;
+        font-size: 0.92rem;
+        line-height: 1.55;
+      }
+
+      .commands {
+        display: grid;
+        gap: 12px;
+      }
+
+      .command {
+        padding: 16px;
+      }
+
+      .command h3 {
+        margin-bottom: 12px;
+      }
+
+      .gallery {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 18px;
+        align-items: stretch;
+      }
+
+      figure {
+        margin: 0;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 10px 24px rgba(26, 36, 42, 0.04);
+      }
+
+      figure img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-height: 280px;
+        object-fit: cover;
+        background: #d9e0e6;
+      }
+
+      figcaption {
+        padding: 12px 14px;
+        color: var(--muted);
+        border-top: 1px solid var(--line);
+        font-size: 0.92rem;
+      }
+
+      .stack {
+        display: grid;
+        gap: 18px;
+      }
+
+      .result-table {
+        display: grid;
+        gap: 10px;
+      }
+
+      .result-row {
+        display: grid;
+        grid-template-columns: 1.5fr 0.7fr 0.7fr 1fr;
+        gap: 14px;
+        padding: 15px 18px;
+        align-items: center;
+      }
+
+      .result-row.header {
+        color: #fff;
+        background: var(--teal);
+        border-color: var(--teal);
+        font-weight: 800;
+        box-shadow: none;
+      }
+
+      .badge {
+        display: inline-block;
+        width: fit-content;
+        padding: 4px 8px;
+        border-radius: 999px;
+        color: #fff;
+        background: var(--gold);
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .badge.green {
+        background: var(--green);
+      }
+
+      .badge.red {
+        background: var(--red);
+      }
+
+      .experiment-note {
+        margin: 0 0 18px;
+        padding: 16px 18px;
+        color: var(--ink);
+        background: #fffaf0;
+        border: 1px solid #ead4a6;
+        border-left: 5px solid var(--gold);
+        border-radius: 8px;
+        box-shadow: 0 10px 24px rgba(26, 36, 42, 0.04);
+      }
+
+      .full-results-wrap {
+        overflow-x: auto;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: 0 10px 24px rgba(26, 36, 42, 0.04);
+      }
+
+      .full-results {
+        width: 100%;
+        min-width: 980px;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+        line-height: 1.35;
+      }
+
+      .full-results th,
+      .full-results td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .full-results th {
+        position: sticky;
+        top: 0;
+        color: #fff;
+        background: var(--teal);
+        font-weight: 800;
+        z-index: 1;
+      }
+
+      .full-results tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .track-main {
+        background: #edf7f1;
+      }
+
+      .track-separate {
+        background: #fff7e6;
+      }
+
+      .track-scale {
+        background: #eef5f8;
+      }
+
+      .track-note {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 999px;
+        color: #fff;
+        background: var(--teal);
+        font-size: 0.75rem;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .track-note.separate {
+        background: var(--gold);
+      }
+
+      .track-note.scale {
+        background: var(--green);
+      }
+
+      .track-note.ablation {
+        background: var(--muted);
+      }
+
+      .notes {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+
+      footer {
+        padding: 28px 0 42px;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      @media (max-width: 900px) {
+        .section-head,
+        .file-row,
+        .gallery,
+        .notes,
+        .result-row {
+          grid-template-columns: 1fr;
+        }
+
+        .metrics,
+        .pipeline,
+        .grid-2,
+        .grid-3 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 620px) {
+        .shell {
+          width: min(100% - 24px, 1180px);
+        }
+
+        header {
+          min-height: 82vh;
+        }
+
+        .hero {
+          padding-bottom: 46px;
+        }
+
+        .metrics,
+        .pipeline,
+        .grid-2,
+        .grid-3 {
+          grid-template-columns: 1fr;
+        }
+
+        section {
+          padding: 34px 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="shell hero">
+        <p class="eyebrow">PyTorch DDPM project overview</p>
+        <h1>Human Face Generation with Diffusion Models</h1>
+        <p>
+          This repository trains and evaluates denoising diffusion models for
+          generating human faces, with a U-Net noise predictor, CelebA-style
+          datasets, optional prompt conditioning, EMA checkpoints, generated
+          sample grids, and FID-based evaluation.
+        </p>
+        <nav class="quick-nav" aria-label="Project sections">
+          <a href="#summary">Summary</a>
+          <a href="#pipeline">Pipeline</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#experiments">Experiments</a>
+          <a href="#usage">Usage</a>
+          <a href="#files">Files</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section id="summary">
+        <div class="section-head">
+          <h2>Project Summary</h2>
+          <p class="lede">
+            The project implements a Denoising Diffusion Probabilistic Model
+            inspired by Ho et al. 2020. Training learns to predict Gaussian
+            noise added to real face images, while generation starts from noise
+            and iteratively denoises into a face.
+          </p>
+        </div>
+
+        <div class="metrics">
+          <div class="metric">
+            <strong>1000</strong>
+            <span>default diffusion timesteps for noising and denoising</span>
+          </div>
+          <div class="metric">
+            <strong>16.71</strong>
+            <span
+              >best logged FID, from a 64px warmup run using 27k train
+              images</span
+            >
+          </div>
+          <div class="metric">
+            <strong>41.82</strong>
+            <span
+              >best logged FID for the 128px long EMA cosine-LR experiment</span
+            >
+          </div>
+          <div class="metric">
+            <strong>128px</strong>
+            <span
+              >main experiment chain; 64px was kept as a separate resolution
+              comparison</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <section id="pipeline">
+        <div class="section-head">
+          <h2>How It Works</h2>
+          <p class="lede">
+            A DDPM does not generate a complete image in one pass. It learns the
+            reverse of a fixed noising process, then repeatedly applies the
+            learned denoiser at inference.
+          </p>
+        </div>
+
+        <div class="pipeline">
+          <div class="step">
+            <span class="step-number">1</span>
+            <h3>Load and normalize images</h3>
+            <p>
+              Datasets resize face images, apply augmentation, convert them to
+              tensors, and normalize pixels into <code>[-1, 1]</code>.
+            </p>
+          </div>
+          <div class="step">
+            <span class="step-number">2</span>
+            <h3>Add controlled noise</h3>
+            <p>
+              <code>q_sample</code> picks a random timestep and mixes the clean
+              image with Gaussian noise using precomputed alpha values.
+            </p>
+          </div>
+          <div class="step">
+            <span class="step-number">3</span>
+            <h3>Predict the noise</h3>
+            <p>
+              The U-Net receives <code>x_t</code> and timestep embeddings, then
+              outputs predicted noise with the same shape as the image.
+            </p>
+          </div>
+          <div class="step">
+            <span class="step-number">4</span>
+            <h3>Denoise into samples</h3>
+            <p>
+              Generation starts from random noise and runs the reverse process
+              from <code>T-1</code> down to <code>0</code>.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="architecture">
+        <div class="section-head">
+          <h2>Architecture</h2>
+          <p class="lede">
+            The model is a time-conditioned U-Net built from residual blocks,
+            self-attention, downsampling, upsampling, and skip connections.
+            Optional text embeddings are folded into the same conditioning
+            stream as timestep embeddings.
+          </p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <h3>Noise Schedule</h3>
+            <p>
+              <code>models/noise_schedule.py</code> precomputes beta, alpha,
+              cumulative alpha, square-root terms, and posterior variance. The
+              default schedule is linear from <code>1e-4</code> to
+              <code>0.02</code>.
+            </p>
+          </div>
+          <div class="card">
+            <h3>U-Net Denoiser</h3>
+            <p>
+              <code>models/unet.py</code> predicts noise for RGB images. It uses
+              sinusoidal timestep embeddings, residual blocks, attention at
+              selected resolutions, and decoder skip connections.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Prompt Conditioning</h3>
+            <p>
+              The repo supports a simple trainable prompt encoder or a frozen
+              CLIP text encoder. Classifier-free guidance is enabled through
+              caption dropout and generation-time guidance scale.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="samples">
+        <div class="section-head">
+          <h2>Generated Samples</h2>
+          <p class="lede">
+            The repository already contains generated grids from multiple
+            experiments. These images are referenced directly from local project
+            folders, so this page stays portable inside the repo.
+          </p>
+        </div>
+
+        <section id="results-gallery">
+          <h2>Qualitative Results</h2>
+
+          <p class="lede">
+            The figure below shows the progression of generated samples across
+            major experiments. As training duration increased and stabilisation
+            techniques such as EMA and cosine learning rate scheduling were
+            introduced, image quality improved substantially, with clearer
+            facial structure, better symmetry, and fewer visible artifacts.
+          </p>
+
+          <figure class="hero-figure">
+            <img
+              src="../figures/progression_grid.png"
+              alt="Progression of generated samples across experiments"
+            />
+            <figcaption>
+              Progression of generated samples across key experiments. The main
+              experimental chain was conducted at 128×128 resolution,
+              progressing from the baseline model through EMA and EMA + Cosine
+              LR variants. The 64×64 experiment was evaluated separately and is
+              not part of the primary experiment progression.
+            </figcaption>
+          </figure>
+        </section>
+      </section>
+
+      <section id="experiments">
+        <div class="section-head">
+          <h2>Experiment Results</h2>
+          <p class="lede">
+            The main experimental chain was run at <strong>128px</strong>, using
+            the 2700-image restricted training setup unless otherwise stated.
+            The <strong>64px</strong> experiments were separate resolution/scale
+            checks and should not be treated as part of the main 128px
+            progression.
+          </p>
+        </div>
+
+        <div class="experiment-note">
+          <strong>Important interpretation:</strong> the headline progression is
+          the 128px chain from baseline training through EMA and EMA + cosine
+          learning-rate scheduling. Lower-resolution 64px runs can produce lower
+          FID because the generation task is easier, but they lose visual detail
+          and are not directly comparable to the main 128px results.
+        </div>
+
+        <div
+          class="result-table"
+          role="table"
+          aria-label="Selected headline results"
+        >
+          <div class="result-row header" role="row">
+            <span>Headline Run</span>
+            <span>Image Size</span>
+            <span>FID</span>
+            <span>Why it matters</span>
+          </div>
+          <div class="result-row" role="row">
+            <strong>F600 EMA + cosine LR</strong>
+            <span>128</span>
+            <span class="badge green">41.82</span>
+            <p>
+              Best result from the main restricted-dataset 128px experiment
+              chain.
+            </p>
+          </div>
+
+          <div class="result-row" role="row">
+            <strong>R100 reconstructed</strong>
+            <span>64</span>
+            <span class="badge green">16.71</span>
+            <p>
+              Separate 64px experiment. Strong FID, but lower resolution makes
+              the task easier and less visually detailed.
+            </p>
+          </div>
+        </div>
+
+        <h3 style="margin-top: 28px">Full Experiment Table</h3>
+        <div
+          class="full-results-wrap"
+          role="region"
+          aria-label="Full experiment results table"
+          tabindex="0"
+        >
+          <table class="full-results">
+            <thead>
+              <tr>
+                <th>Experiment</th>
+                <th>Configuration</th>
+                <th>FID</th>
+                <th>Track / Interpretation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="track-main">
+                <td>B</td>
+                <td>128px, ch64, batch 1, 20 epochs</td>
+                <td>309.14</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> Early
+                  baseline.
+                </td>
+              </tr>
+              <tr>
+                <td>C</td>
+                <td>128px, ch32, batch 1, 20 epochs</td>
+                <td>261.26</td>
+                <td>
+                  <span class="track-note ablation">Capacity ablation</span>
+                  Smaller model at early training.
+                </td>
+              </tr>
+              <tr class="track-separate">
+                <td>D</td>
+                <td>64px, ch64, batch 1, 20 epochs</td>
+                <td>216.12</td>
+                <td>
+                  <span class="track-note separate">Separate 64px check</span>
+                  Resolution comparison, not the main chain.
+                </td>
+              </tr>
+              <tr class="track-main">
+                <td>E</td>
+                <td>128px, ch64, batch 1, 50 epochs</td>
+                <td>282.86</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> Early
+                  training extension.
+                </td>
+              </tr>
+              <tr class="track-main">
+                <td>F100</td>
+                <td>128px, ch64, batch 1, 100 epochs</td>
+                <td>181.60</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> Baseline
+                  improves with longer training.
+                </td>
+              </tr>
+              <tr class="track-main">
+                <td>F150</td>
+                <td>128px, ch64, batch 1, 150 epochs</td>
+                <td>122.23</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> Continued
+                  improvement.
+                </td>
+              </tr>
+              <tr class="track-main">
+                <td>F200</td>
+                <td>128px, ch64, batch 1, 200 epochs</td>
+                <td>118.30</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> Best raw
+                  baseline before degradation.
+                </td>
+              </tr>
+              <tr class="track-main">
+                <td>F250 raw</td>
+                <td>128px, ch64, batch 1, 250 epochs</td>
+                <td>159.40</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> Shows
+                  instability without EMA.
+                </td>
+              </tr>
+              <tr class="track-main">
+                <td>F200 EMA</td>
+                <td>128px, ch64, EMA, 200 epochs</td>
+                <td>95.30</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> EMA improves
+                  stability.
+                </td>
+              </tr>
+              <tr class="track-main">
+                <td>F250 EMA</td>
+                <td>128px, ch64, EMA, 250 epochs</td>
+                <td>76.62</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> EMA avoids
+                  raw-model degradation.
+                </td>
+              </tr>
+              <tr class="track-main">
+                <td>F300 EMA</td>
+                <td>128px, ch64, EMA, 300 epochs</td>
+                <td>62.72</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> Continued
+                  stable improvement.
+                </td>
+              </tr>
+              <tr class="track-main">
+                <td>F350 EMA</td>
+                <td>128px, ch64, EMA, 350 epochs</td>
+                <td>63.21</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> EMA-only
+                  gains begin to plateau.
+                </td>
+              </tr>
+              <tr class="track-main">
+                <td>F350 EMA + cosine LR</td>
+                <td>128px, ch64, EMA, cosine LR, 350 epochs</td>
+                <td>45.02</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> Cosine LR
+                  gives large improvement over EMA-only.
+                </td>
+              </tr>
+              <tr class="track-main">
+                <td>F400 EMA + cosine LR</td>
+                <td>128px, ch64, EMA, cosine LR, 400 epochs</td>
+                <td>44.65</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> Stable
+                  long-run performance.
+                </td>
+              </tr>
+              <tr class="track-main">
+                <td>F450 EMA + cosine LR</td>
+                <td>128px, ch64, EMA, cosine LR, 450 epochs</td>
+                <td>42.64</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> Best around
+                  mid-long training.
+                </td>
+              </tr>
+              <tr class="track-main">
+                <td>F500 EMA + cosine LR</td>
+                <td>128px, ch64, EMA, cosine LR, 500 epochs</td>
+                <td>45.92</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> Minor
+                  fluctuation after 450 epochs.
+                </td>
+              </tr>
+              <tr class="track-main">
+                <td>F550 EMA + cosine LR</td>
+                <td>128px, ch64, EMA, cosine LR, 550 epochs</td>
+                <td>43.90</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> Performance
+                  recovers after fluctuation.
+                </td>
+              </tr>
+              <tr class="track-main">
+                <td>F600 EMA + cosine LR</td>
+                <td>128px, ch64, EMA, cosine LR, 600 epochs</td>
+                <td>41.82</td>
+                <td>
+                  <span class="track-note">Main 128px chain</span> Best
+                  main-chain result.
+                </td>
+              </tr>
+              <tr>
+                <td>G</td>
+                <td>128px, ch96, batch 1, 20 epochs</td>
+                <td>247.07</td>
+                <td>
+                  <span class="track-note ablation">Capacity ablation</span>
+                  Larger model at early training.
+                </td>
+              </tr>
+              <tr>
+                <td>H</td>
+                <td>128px, ch32, batch 1, 50 epochs</td>
+                <td>209.64</td>
+                <td>
+                  <span class="track-note ablation">Capacity ablation</span>
+                  Smaller model remains competitive early.
+                </td>
+              </tr>
+              <tr>
+                <td>I</td>
+                <td>128px, ch96, batch 1, 50 epochs</td>
+                <td>257.59</td>
+                <td>
+                  <span class="track-note ablation">Capacity ablation</span>
+                  ch96 worsened from 20 to 50 epochs.
+                </td>
+              </tr>
+              <tr>
+                <td>J100</td>
+                <td>128px, ch64, lr=1e-4, 100 epochs</td>
+                <td>240.12</td>
+                <td>
+                  <span class="track-note ablation"
+                    >Learning-rate ablation</span
+                  >
+                  Lower LR slowed convergence.
+                </td>
+              </tr>
+              <tr>
+                <td>J250</td>
+                <td>128px, ch64, lr=1e-4, 250 epochs</td>
+                <td>159.86</td>
+                <td>
+                  <span class="track-note ablation"
+                    >Learning-rate ablation</span
+                  >
+                  Lower LR did not outperform baseline.
+                </td>
+              </tr>
+              <tr>
+                <td>K</td>
+                <td>128px, ch96, lr=1e-4, 20 epochs</td>
+                <td>247.59</td>
+                <td>
+                  <span class="track-note ablation"
+                    >Capacity + LR ablation</span
+                  >
+                  ch96 with lower LR.
+                </td>
+              </tr>
+              <tr>
+                <td>L</td>
+                <td>128px, ch32, batch 1, 100 epochs</td>
+                <td>216.26</td>
+                <td>
+                  <span class="track-note ablation">Capacity ablation</span>
+                  ch32 did not scale as well as ch64 at 100 epochs.
+                </td>
+              </tr>
+              <tr>
+                <td>EMA raw check</td>
+                <td>ch64, 10 epochs, no EMA</td>
+                <td>234.82</td>
+                <td>
+                  <span class="track-note ablation">EMA check</span> Controlled
+                  early comparison.
+                </td>
+              </tr>
+              <tr>
+                <td>EMA check</td>
+                <td>ch64, 10 epochs, EMA</td>
+                <td>173.66</td>
+                <td>
+                  <span class="track-note ablation">EMA check</span> EMA
+                  improves sample quality early.
+                </td>
+              </tr>
+              <tr class="track-scale">
+                <td>M (81K images)</td>
+                <td>128×128, ch128, batch 16, 100 epochs, warm-up</td>
+                <td>41.31</td>
+                <td>
+                  <span class="track-note scale">Scale-up</span> Larger
+                  data/model/batch run, not directly comparable to restricted
+                  setup.
+                </td>
+              </tr>
+              <tr class="track-scale">
+                <td>O100 (expO)</td>
+                <td>
+                  CelebA-HQ-256, 128px, ch128, EMA, batch 4 with 16 accumulation
+                  steps for effective batch 64, 100 epochs
+                </td>
+                <td>64.91</td>
+                <td>
+                  <span class="track-note scale">Gradient accumulation</span>
+                  Larger effective batch with EMA.
+                </td>
+              </tr>
+              <tr class="track-scale">
+                <td>N100</td>
+                <td>
+                  128px, ch64, EMA, batch 4 with 16 accumulation steps for
+                  effective batch 64, 100 epochs
+                </td>
+                <td>83.35</td>
+                <td>
+                  <span class="track-note scale">Gradient accumulation</span>
+                  Comparable improvement at fewer epochs.
+                </td>
+              </tr>
+              <tr class="track-scale">
+                <td>N200</td>
+                <td>
+                  128px, ch64, EMA, batch 4 with 16 accumulation steps for
+                  effective batch 64, 200 epochs
+                </td>
+                <td>76.91</td>
+                <td>
+                  <span class="track-note scale">Gradient accumulation</span>
+                  Similar to F250 EMA with fewer epochs.
+                </td>
+              </tr>
+              <tr class="track-separate">
+                <td>R100 reconstructed</td>
+                <td>CelebA, 64px, ch128, batch 16, 100 epochs</td>
+                <td>16.71</td>
+                <td>
+                  <span class="track-note separate">Separate 64px run</span>
+                  Best FID, but lower-resolution task and not part of main 128px
+                  chain.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="conclusion">
+        <h2>Project Highlights</h2>
+
+        <p class="section-subtitle">
+          A diffusion-based face generation project exploring training
+          stability, architecture design, and large-scale experimentation.
+        </p>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="metric-icon">🏆</span>
+
+            <h3>Best FID</h3>
+
+            <p class="metric-value">41.82</p>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-icon">⏱️</span>
+
+            <h3>Training</h3>
+
+            <p class="metric-value">600 Epochs</p>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-icon">🖼️</span>
+
+            <h3>Resolution</h3>
+
+            <p class="metric-value">128 × 128</p>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-icon">🚀</span>
+
+            <h3>Best Setup</h3>
+
+            <p class="metric-value">EMA + Cosine LR</p>
+          </div>
+        </div>
+
+        <div class="highlights-card">
+          <h3>Key Outcomes</h3>
+
+          <ul>
+            <li>
+              Built a complete DDPM face generation pipeline from scratch.
+            </li>
+
+            <li>
+              Ran extensive experiments across architecture and training
+              configurations.
+            </li>
+
+            <li>
+              Validated EMA and cosine LR as major contributors to training
+              stability.
+            </li>
+
+            <li>
+              Achieved realistic face synthesis under limited-data coursework
+              constraints.
+            </li>
+
+            <li>
+              Maintained a collaborative GitHub workflow with code reviews, PRs,
+              and experiment tracking.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="notes">
+        <div class="section-head">
+          <h2>Current Capabilities</h2>
+          <p class="lede">
+            Beyond a basic DDPM, the project includes several practical
+            extensions that make experiments easier to compare and generation
+            runs easier to reproduce.
+          </p>
+        </div>
+
+        <div class="notes">
+          <div class="card">
+            <h3>Implemented</h3>
+            <p>
+              DDPM training, reverse sampling, EMA checkpoints, gradient
+              clipping, CUDA/MPS/CPU device selection, face-safe augmentation,
+              caption files, simple and CLIP text encoders, classifier-free
+              guidance, FID evaluation, and generated image manifests.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Project Artifacts</h3>
+            <p>
+              The repo includes generated outputs, logs, figures, tests, a
+              README, an architecture explanation, caption-generation utilities,
+              and an IEEE-style report draft.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="shell">
+        <p>
+          Generated from the local repository contents. Open this file directly
+          from the project root to keep all relative image links working.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

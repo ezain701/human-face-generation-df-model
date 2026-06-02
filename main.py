@@ -39,7 +39,11 @@ def parse_args():
     parser.add_argument("--use_scheduler", action="store_true", help="Enable cosine annealing scheduler")
     parser.add_argument("--scheduler_tmax", type=int, default=None, help="T_max for CosineAnnealingLR (defaults to total epochs)")
     parser.add_argument("--scheduler_eta_min", type=float, default=1e-6, help="Minimum learning rate for CosineAnnealingLR")
-
+    parser.add_argument(
+        "--reset_lr_on_resume",
+        action="store_true",
+        help="Force learning rate from CLI after resuming; otherwise keep checkpoint LR",
+    )
 
     # EMA options
     parser.add_argument("--use_ema", action="store_true", help="Enable EMA model")
@@ -90,9 +94,6 @@ def main():
         ckpt = torch.load(args.resume, map_location=device)
 
         model.load_state_dict(ckpt["model_state_dict"])
-        if scheduler is not None and "scheduler_state_dict" in ckpt:
-            scheduler.load_state_dict(ckpt["scheduler_state_dict"])
-            print("  Loaded scheduler state from checkpoint")
         model = model.to(device)
 
         optimizer.load_state_dict(ckpt["optimizer_state_dict"])
@@ -103,17 +104,20 @@ def main():
                 if torch.is_tensor(v):
                     state[k] = v.to(device)
 
-        # Force current CLI learning rate after resume
-        for group in optimizer.param_groups:
-            group["lr"] = args.lr
+        # Load scheduler state if available
+        if scheduler is not None and "scheduler_state_dict" in ckpt:
+            scheduler.load_state_dict(ckpt["scheduler_state_dict"])
+            print("  Loaded scheduler state from checkpoint")
+        elif scheduler is not None:
+            print("  No scheduler state found in checkpoint; scheduler will start fresh")
 
-        if scheduler is not None and "scheduler_state_dict" not in ckpt:
-            t_max = args.scheduler_tmax if args.scheduler_tmax is not None else args.epochs
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-                optimizer,
-                T_max=t_max,
-                eta_min=args.scheduler_eta_min,
-            )
+        # Optionally reset LR from CLI after resume
+        if args.reset_lr_on_resume:
+            for group in optimizer.param_groups:
+                group["lr"] = args.lr
+            print(f"  Reset learning rate to {args.lr}")
+        else:
+            print(f"  Keeping resumed learning rate: {optimizer.param_groups[0]['lr']}")
 
         if args.use_ema and ema_model is not None:
             if "ema_model_state_dict" in ckpt:
