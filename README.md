@@ -124,13 +124,6 @@ python generate.py \
 | `--checkpoint_dir` | `checkpoints` | Directory for saved checkpoints |
 | `--log_dir` | `logs` | Directory for training logs and samples |
 | `--resume` | `None` | Path to checkpoint to resume from |
-| `--use_scheduler` | False | Enable cosine annealing LR scheduler|
-| `--scheduler_tmax` | `None` | T_max for CosineAnnealingLR (defaults to total epochs) |
-| `--scheduler_eta_min` | `1e-6` | Minimum learning rate for cosine annealing LR |
-| `--use_ema` | False | Enable EMA model |
-| `--ema_decay` | 0.999 | EMA decay factor |
-
-
 
 ## Evaluation
 
@@ -149,10 +142,6 @@ from evaluation.visualize import plot_training_loss
 plot_training_loss("logs/training_log.json", save_path="loss_curve.png")
 ```
 
-## Unit Tests
-
-To run all unit tests, cd to the human-face-generation-df-model-main directory and enter the command pytest
-
 ## Hardware Requirements
 
 - **GPU recommended:** Training on CPU is extremely slow. Use CUDA (NVIDIA) or MPS (Apple Silicon).
@@ -162,5 +151,3 @@ To run all unit tests, cd to the human-face-generation-df-model-main directory a
 
 - Ho, J., Jain, A., & Abbeel, P. (2020). *Denoising Diffusion Probabilistic Models*. NeurIPS 2020.
 - Karras, T., et al. (2018). *Progressive Growing of GANs for Improved Quality, Stability, and Variation*. ICLR 2018 (CelebA-HQ dataset).
-- Dhariwal, P. and Nichol, A. *Diffusion models beat GANs on image synthesis*. Advances in Neural Information Processing Systems, vol. 34, pp. 8780–8794, 2021.
-- Nichol, A. and Dhariwal, P. *Improved Denoising Diffusion Probabilistic Models* Proceedings of the International Conference on Machine Learning (ICML), pp. 8162–8171, 2021.

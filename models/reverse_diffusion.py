@@ -10,7 +10,6 @@ Reference: Ho et al., "Denoising Diffusion Probabilistic Models", 2020
 import torch
 from .forward_diffusion import extract
 
-
 @torch.no_grad()
 def p_sample(schedule, model, x, t):
     """
@@ -39,6 +38,7 @@ def p_sample(schedule, model, x, t):
 @torch.no_grad()
 def p_sample_loop(schedule, model, shape):
     """Full reverse process: generate images by denoising from pure noise."""
+    model.eval()
     x = torch.randn(shape, device=schedule.device)
 
     for t in reversed(range(schedule.num_timesteps)):
@@ -48,7 +48,7 @@ def p_sample_loop(schedule, model, shape):
 
 
 @torch.no_grad()
-def sample(schedule, model, num_images, image_size=256, channels=3):
+def sample(schedule, model, num_images, image_size=64, channels=3):
     """Generate a batch of images from noise."""
     shape = (num_images, channels, image_size, image_size)
     return p_sample_loop(schedule, model, shape)
