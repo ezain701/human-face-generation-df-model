@@ -49,6 +49,9 @@ def parse_args():
     parser.add_argument("--use_ema", action="store_true", help="Enable EMA model")
     parser.add_argument("--ema_decay", type=float, default=0.999, help="EMA decay factor")
 
+    # Warmup options
+    parser.add_argument("--warmup_steps", type=int, default=None, help="Number of steps for learning rate warmup (disabled by default)")
+
     return parser.parse_args()
 
 
@@ -75,17 +78,9 @@ def main():
 
     # --- Optimizer ---
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    scheduler = None
-    if args.use_scheduler:
-        t_max = args.scheduler_tmax if args.scheduler_tmax is not None else args.epochs
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer,
-            T_max=t_max,
-            eta_min=args.scheduler_eta_min,
-        )
-        print(
-            f"Scheduler enabled: CosineAnnealingLR(T_max={t_max}, eta_min={args.scheduler_eta_min})"
-        )
+
+    # Note: Scheduler is created after dataloader (needs to know steps_per_epoch)
+    warmup_steps = args.warmup_steps if args.warmup_steps is not None else 0
 
     # --- Resume from checkpoint ---
     start_epoch = 0
@@ -104,12 +99,7 @@ def main():
                 if torch.is_tensor(v):
                     state[k] = v.to(device)
 
-        # Load scheduler state if available
-        if scheduler is not None and "scheduler_state_dict" in ckpt:
-            scheduler.load_state_dict(ckpt["scheduler_state_dict"])
-            print("  Loaded scheduler state from checkpoint")
-        elif scheduler is not None:
-            print("  No scheduler state found in checkpoint; scheduler will start fresh")
+        # Note: Scheduler state is loaded after scheduler is created (needs dataloader)
 
         # Optionally reset LR from CLI after resume
         if args.reset_lr_on_resume:
@@ -138,7 +128,63 @@ def main():
         dataset = ButterflyDataset(args.data_dir, image_size=args.image_size)
 
     dataloader = get_dataloader(dataset, batch_size=args.batch_size)
-    print(f"Dataset: {args.dataset} — {len(dataset)} images, {len(dataloader)} batches/epoch")
+    steps_per_epoch = len(dataloader)
+    print(f"Dataset: {args.dataset} — {len(dataset)} images, {steps_per_epoch} batches/epoch")
+
+    # --- Learning rate scheduler (single unified scheduler) ---
+    # Handles warmup, cosine, or warmup+cosine in one scheduler to avoid conflicts
+    scheduler = None
+    scheduler_steps_per_call = "epoch"  # Default: step once per epoch
+
+    if warmup_steps > 0 and args.use_scheduler:
+        # Combined warmup + cosine: step per batch
+        import math
+        total_steps = args.epochs * steps_per_epoch
+        t_max = args.scheduler_tmax if args.scheduler_tmax is not None else args.epochs
+        cosine_steps = t_max * steps_per_epoch
+        eta_min_ratio = args.scheduler_eta_min / args.lr
+
+        def combined_lr_lambda(current_step: int):
+            if current_step < warmup_steps:
+                return float(current_step + 1) / float(warmup_steps)
+            else:
+                progress = float(current_step - warmup_steps) / float(max(1, cosine_steps))
+                progress = min(progress, 1.0)
+                return eta_min_ratio + (1.0 - eta_min_ratio) * 0.5 * (1.0 + math.cos(math.pi * progress))
+
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, combined_lr_lambda)
+        scheduler_steps_per_call = "batch"
+        print(f"Scheduler: warmup ({warmup_steps} steps) + cosine (T_max={t_max} epochs, eta_min={args.scheduler_eta_min})")
+
+    elif warmup_steps > 0:
+        # Warmup only: step per batch
+        def warmup_lr_lambda(current_step: int):
+            if current_step < warmup_steps:
+                return float(current_step + 1) / float(warmup_steps)
+            return 1.0
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, warmup_lr_lambda)
+        scheduler_steps_per_call = "batch"
+        print(f"Scheduler: warmup only ({warmup_steps} steps)")
+
+    elif args.use_scheduler:
+        # Cosine only: step per epoch
+        t_max = args.scheduler_tmax if args.scheduler_tmax is not None else args.epochs
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=t_max,
+            eta_min=args.scheduler_eta_min,
+        )
+        scheduler_steps_per_call = "epoch"
+        print(f"Scheduler: CosineAnnealingLR(T_max={t_max}, eta_min={args.scheduler_eta_min})")
+
+    # Load scheduler state if resuming
+    if args.resume and scheduler is not None:
+        ckpt = torch.load(args.resume, map_location=device)
+        if "scheduler_state_dict" in ckpt:
+            scheduler.load_state_dict(ckpt["scheduler_state_dict"])
+            print("  Loaded scheduler state from checkpoint")
+        else:
+            print("  No scheduler state found in checkpoint; scheduler will start fresh")
 
     # --- Train ---
     trainer = Trainer(
@@ -153,6 +199,7 @@ def main():
         checkpoint_dir=args.checkpoint_dir,
         log_dir=args.log_dir,
         scheduler=scheduler,
+        scheduler_steps_per_call=scheduler_steps_per_call,
     )
     trainer.train(
         num_epochs=args.epochs,

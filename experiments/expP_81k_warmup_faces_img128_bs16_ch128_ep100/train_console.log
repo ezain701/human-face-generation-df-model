@@ -1,0 +1,11 @@
+Using device: cuda
+Noise schedule: linear
+Model parameters: 34,238,467
+Dataset: celeba - 90000 images total, 81000 images for training, 9000 images for test/FID
+Checkpoint directory: checkpoints
+Log directory: logs
+Final checkpoint: checkpoints/model_epoch_100.pt
+Training log: logs/training_log.json
+Final epoch: 100
+Final average loss: 0.010182411641641239
+Training complete.
